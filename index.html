@@ -11,19 +11,68 @@
       --primary: #1e3a8a;
       --primary-light: #2563eb;
       --primary-soft: #dbeafe;
+      --primary-text: #1e3a8a;
       --bg: #f3f4f6;
       --card: #ffffff;
+      --surface-alt: #f8fafc;
+      --surface-foot: #fafafa;
+      --input-bg: #ffffff;
+      --input-readonly: #e2e8f0;
       --text: #1f2937;
+      --heading: #0f172a;
       --muted: #6b7280;
       --border: #e5e7eb;
+      --border-subtle: #f1f5f9;
+      --th-bg: #f1f5f9;
+      --th-text: #1e293b;
+      --tr-hover: #f8fafc;
+      --progress-bg: #e2e8f0;
       --ok: #10b981;
       --ok-bg: #d1fae5;
+      --ok-text: #065f46;
       --warn: #f59e0b;
       --warn-bg: #fef3c7;
+      --warn-text: #92400e;
       --err: #ef4444;
       --err-bg: #fee2e2;
+      --err-text: #991b1b;
       --pend: #6b7280;
       --pend-bg: #f3f4f6;
+      --pend-text: #374151;
+    }
+    [data-theme="dark"] {
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --primary-soft: rgba(59, 130, 246, 0.2);
+      --primary-text: #60a5fa;
+      --bg: #0b1120;
+      --card: #111827;
+      --surface-alt: #1e293b;
+      --surface-foot: #0f172a;
+      --input-bg: #0f172a;
+      --input-readonly: #1e293b;
+      --text: #f3f4f6;
+      --heading: #f8fafc;
+      --muted: #9ca3af;
+      --border: #334155;
+      --border-subtle: #1e293b;
+      --th-bg: #1e293b;
+      --th-text: #f1f5f9;
+      --tr-hover: rgba(30, 41, 59, 0.65);
+      --progress-bg: #334155;
+      --ok: #10b981;
+      --ok-bg: rgba(16, 185, 129, 0.2);
+      --ok-text: #34d399;
+      --warn: #f59e0b;
+      --warn-bg: rgba(245, 158, 11, 0.2);
+      --warn-text: #fbbf24;
+      --err: #ef4444;
+      --err-bg: rgba(239, 68, 68, 0.22);
+      --err-text: #f87171;
+      --pend: #94a3b8;
+      --pend-bg: rgba(148, 163, 184, 0.2);
+      --pend-text: #cbd5e1;
+      color-scheme: dark;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -31,6 +80,7 @@
       background: var(--bg);
       color: var(--text);
       line-height: 1.5;
+      transition: background-color 0.25s ease, color 0.25s ease;
     }
     header {
       background: linear-gradient(135deg, #0f172a, #1e3a8a);
@@ -90,8 +140,8 @@
     .btn-primary:hover { background: #1d4ed8; }
     .btn-outline { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); }
     .btn-outline:hover { background: rgba(255,255,255,0.22); }
-    .btn-light { background: #fff; color: var(--text); border: 1px solid var(--border); }
-    .btn-light:hover { background: #f9fafb; }
+    .btn-light { background: var(--surface-alt); color: var(--text); border: 1px solid var(--border); }
+    .btn-light:hover { filter: brightness(0.95); }
     .btn-success { background: var(--ok); color: #fff; }
     .btn-success:hover { background: #059669; }
     .btn-danger { background: var(--err); color: #fff; }
@@ -130,7 +180,8 @@
       border-radius: 8px;
       font-size: 0.85rem;
       font-family: inherit;
-      background: #fff;
+      background: var(--input-bg);
+      color: var(--text);
     }
 
     /* Stats Summary */
@@ -275,7 +326,7 @@
     }
     .card-header {
       padding: 0.9rem 1.2rem;
-      background: #f8fafc;
+      background: var(--surface-alt);
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -298,7 +349,7 @@
       font-weight: 600;
     }
     .card-body { padding: 1.2rem; flex: 1; }
-    .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem; color: #0f172a; }
+    .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--heading); }
     .card-sub { font-size: 0.9rem; color: var(--primary-light); font-weight: 600; margin-bottom: 0.75rem; }
     .meta-list {
       font-size: 0.82rem;
@@ -310,7 +361,7 @@
       margin-bottom: 0.3rem;
       display: flex;
       justify-content: space-between;
-      border-bottom: 1px dashed #f1f5f9;
+      border-bottom: 1px dashed var(--border-subtle);
       padding-bottom: 0.2rem;
     }
     .meta-list strong { color: var(--text); }
@@ -324,7 +375,7 @@
     }
     .progress-bar {
       height: 8px;
-      background: #e2e8f0;
+      background: var(--progress-bg);
       border-radius: 99px;
       overflow: hidden;
     }
@@ -336,7 +387,7 @@
     .card-footer {
       padding: 0.9rem 1.2rem;
       border-top: 1px solid var(--border);
-      background: #fafafa;
+      background: var(--surface-foot);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -351,10 +402,10 @@
       font-size: 0.75rem;
       font-weight: 700;
     }
-    .badge-ok { background: var(--ok-bg); color: #065f46; }
-    .badge-warn { background: var(--warn-bg); color: #92400e; }
-    .badge-err { background: var(--err-bg); color: #991b1b; }
-    .badge-pend { background: var(--pend-bg); color: #374151; }
+    .badge-ok { background: var(--ok-bg); color: var(--ok-text); }
+    .badge-warn { background: var(--warn-bg); color: var(--warn-text); }
+    .badge-err { background: var(--err-bg); color: var(--err-text); }
+    .badge-pend { background: var(--pend-bg); color: var(--pend-text); }
 
     /* Detail View */
     .detail-header {
@@ -373,7 +424,7 @@
     }
     .qr-box {
       text-align: center;
-      background: #f8fafc;
+      background: var(--surface-alt);
       padding: 1rem;
       border-radius: 12px;
       border: 1px solid var(--border);
@@ -391,7 +442,7 @@
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 0.75rem;
       margin-top: 1rem;
-      background: #f8fafc;
+      background: var(--surface-alt);
       padding: 1rem;
       border-radius: 10px;
       border: 1px solid var(--border);
@@ -437,7 +488,7 @@
       border: 1px solid var(--border);
       margin-bottom: 1.5rem;
     }
-    .panel h3 { font-size: 1.12rem; margin-bottom: 0.35rem; color: #0f172a; }
+    .panel h3 { font-size: 1.12rem; margin-bottom: 0.35rem; color: var(--heading); }
     .panel p.sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.2rem; }
 
     /* Photo Gallery Grid */
@@ -451,13 +502,13 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       overflow: hidden;
-      background: #f8fafc;
+      background: var(--surface-alt);
       display: flex;
       flex-direction: column;
     }
     .photo-thumb-wrap {
       height: 170px;
-      background: #e2e8f0;
+      background: var(--progress-bg);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -472,7 +523,7 @@
     }
     .photo-fallback {
       font-size: 0.78rem;
-      color: #475569;
+      color: var(--muted);
       padding: 0.75rem;
       text-align: center;
     }
@@ -484,7 +535,7 @@
       gap: 0.5rem;
       font-size: 0.8rem;
       border-top: 1px solid var(--border);
-      background: #fff;
+      background: var(--card);
     }
 
     /* 3D Viewer Container */
@@ -504,7 +555,7 @@
       --poster-color: transparent;
     }
     .viewer-controls-bar {
-      background: #f8fafc;
+      background: var(--surface-alt);
       padding: 1rem;
       border-radius: 10px;
       border: 1px solid var(--border);
@@ -525,16 +576,16 @@
       vertical-align: middle;
     }
     th {
-      background: #f1f5f9;
+      background: var(--th-bg);
       font-weight: 700;
-      color: #1e293b;
+      color: var(--th-text);
       white-space: nowrap;
     }
-    tr:hover td { background: #f8fafc; }
+    tr:hover td { background: var(--tr-hover); }
 
     /* Form Grid */
     .log-form {
-      background: #f8fafc;
+      background: var(--surface-alt);
       padding: 1.2rem;
       border-radius: 10px;
       border: 1px solid var(--border);
@@ -551,7 +602,7 @@
       font-size: 0.78rem;
       font-weight: 700;
       margin-bottom: 0.25rem;
-      color: #334155;
+      color: var(--text);
     }
     .form-field input, .form-field select, .form-field textarea { width: 100%; }
 
@@ -570,7 +621,8 @@
     .lightbox-content {
       max-width: 90vw;
       max-height: 88vh;
-      background: #fff;
+      background: var(--card);
+      color: var(--text);
       border-radius: 12px;
       overflow: hidden;
       display: flex;
@@ -596,8 +648,8 @@
       gap: 1.25rem;
     }
     .qr-label-card {
-      background: #fff;
-      border: 2px dashed #334155;
+      background: var(--card);
+      border: 2px dashed var(--border);
       border-radius: 12px;
       padding: 1.2rem;
       text-align: center;
@@ -639,6 +691,7 @@
         📂 Importar JSON
         <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" />
       </label>
+      <button class="btn btn-outline" id="themeToggleBtn" onclick="toggleTheme()" title="Cambiar entre tema claro y oscuro">🌙 Modo Oscuro</button>
     </div>
   </div>
 </header>
@@ -1263,7 +1316,7 @@ function renderDetailView(container, eq) {
           <span class="family-tag">${eq.icono} ${eq.familia}</span>
           <span class="badge ${getBadgeClass(eq.estadoGlobal)}">${eq.estadoGlobal}</span>
         </div>
-        <h2 style="font-size:1.5rem; color:#0f172a;">${eq.nombre}: ${eq.marca} ${eq.modelo}</h2>
+        <h2 style="font-size:1.5rem; color:var(--heading);">${eq.nombre}: ${eq.marca} ${eq.modelo}</h2>
         <p style="color:var(--muted); font-size:0.9rem; margin-top:0.3rem;">${eq.descripcion}</p>
 
         <div class="specs-grid">
@@ -1341,7 +1394,7 @@ function renderTabContent(eq) {
                   <td><input type="text" value="${d.subsistema}" style="font-weight:700; width:100%; min-width:160px;" onchange="updateDespiece('${eq.id}', ${idx}, 'subsistema', this.value)" /></td>
                   <td><input type="text" value="${d.funcion}" style="width:100%; min-width:220px;" onchange="updateDespiece('${eq.id}', ${idx}, 'funcion', this.value)" /></td>
                   <td>
-                    <select onchange="updateDespiece('${eq.id}', ${idx}, 'estado', this.value)" class="badge ${getBadgeClass(d.estado)}" style="border:1px solid #cbd5e1;">
+                    <select onchange="updateDespiece('${eq.id}', ${idx}, 'estado', this.value)" class="badge ${getBadgeClass(d.estado)}" style="border:1px solid var(--border);">
                       ${["Pendiente", "Correcto (OK)", "Desgastado / Sucio", "Dañado / Averiado", "Ausente / Falta"].map(st => `<option value="${st}" ${d.estado===st?'selected':''}>${st}</option>`).join('')}
                     </select>
                   </td>
@@ -1381,7 +1434,7 @@ function renderTabContent(eq) {
         <p class="sub">Al subir una foto o añadir una URL, aparecerá automáticamente como portada de esta máquina en la pantalla inicial (y si la máquina también tiene modelo 3D, al pasar el ratón por encima cambiará al modelo 3D).</p>
 
         <div class="log-form no-print">
-          <h4 style="margin-bottom:0.75rem; color:var(--primary);">📸 Subir o Añadir Fotografía al Equipo</h4>
+          <h4 style="margin-bottom:0.75rem; color:var(--primary-text);">📸 Subir o Añadir Fotografía al Equipo</h4>
           <div class="form-grid">
             <div class="form-field">
               <label>Opción A: Subir foto desde tu PC o Móvil (se guarda como portada)</label>
@@ -1534,7 +1587,7 @@ function renderTabContent(eq) {
                   <td><strong>${c.punto}</strong></td>
                   <td>${c.criterio}</td>
                   <td>
-                    <select onchange="updateChecklist('${eq.id}', ${idx}, 'resultado', this.value)" class="badge ${getBadgeClass(c.resultado)}" style="border:1px solid #cbd5e1;">
+                    <select onchange="updateChecklist('${eq.id}', ${idx}, 'resultado', this.value)" class="badge ${getBadgeClass(c.resultado)}" style="border:1px solid var(--border);">
                       ${["Pendiente", "OK / Cumple", "Fallo Leve", "No Cumple / Avería", "No Aplica (N/A)"].map(st => `<option value="${st}" ${c.resultado===st?'selected':''}>${st}</option>`).join('')}
                     </select>
                   </td>
@@ -1572,7 +1625,7 @@ function renderTabContent(eq) {
           <a class="btn btn-light" href="https://www.medwrench.com/?Search=${encodeURIComponent(eq.marca + ' ' + eq.modelo.split('(')[0])}" target="_blank" rel="noopener">🛠️ Buscar en MedWrench</a>
         </div>
 
-        <div style="background:#f8fafc; padding:1.2rem; border-radius:10px; border:1px solid var(--border);">
+        <div style="background:var(--surface-alt); padding:1.2rem; border-radius:10px; border:1px solid var(--border);">
           <label style="font-weight:700; font-size:0.85rem; display:block; margin-bottom:0.4rem;">🔗 Enlace al Manual PDF (en carpeta <code>manuales/</code> de GitHub o enlace de Google Drive):</label>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
             <input type="text" style="flex:1; min-width:260px;" placeholder="Ej: manuales/${eq.id}.pdf o enlace compartido de Google Drive..." value="${eq.urlManualDrive || ''}" onchange="updateEqMeta('${eq.id}', 'urlManualDrive', this.value)" />
@@ -1590,7 +1643,7 @@ function renderTabContent(eq) {
         <p class="sub">Registro cronológico de diagnósticos, mantenimientos preventivos, reparaciones y pruebas realizadas por cada grupo de trabajo.</p>
 
         <div class="log-form no-print">
-          <h4 style="margin-bottom:0.75rem; color:var(--primary);">➕ Registrar Nueva Intervención Técnica</h4>
+          <h4 style="margin-bottom:0.75rem; color:var(--primary-text);">➕ Registrar Nueva Intervención Técnica</h4>
           <div class="form-grid">
             <div class="form-field">
               <label>Fecha</label>
@@ -1698,11 +1751,11 @@ function renderQrPrintView(container) {
     <div class="qr-print-grid">
       ${list.map(eq => `
         <div class="qr-label-card">
-          <div style="font-weight:800; font-size:1.1rem; color:var(--primary);">${eq.id} — ${eq.marca}</div>
+          <div style="font-weight:800; font-size:1.1rem; color:var(--primary-text);">${eq.id} — ${eq.marca}</div>
           <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.25rem;">${eq.modelo}</div>
           <div style="font-size:0.72rem; color:var(--muted);">S/N: ${eq.sn}</div>
           <img src="${getQrImageUrl(eq.id)}" alt="QR ${eq.id}" />
-          <div style="font-size:0.72rem; font-weight:700; color:#334155;">ESCANEAR PARA FICHA, FOTOS, 3D Y DIARIO</div>
+          <div style="font-size:0.72rem; font-weight:700; color:var(--text);">ESCANEAR PARA FICHA, FOTOS, 3D Y DIARIO</div>
         </div>
       `).join('')}
     </div>
@@ -1719,8 +1772,8 @@ function renderGithubGuideView(container) {
       <p class="sub">GitHub Pages es 100% gratuito, no tiene límites de tokens ni caduca, y permite actualizar fotos, modelos 3D (<code>.glb</code>) y código tantas veces como quieras.</p>
 
       <div style="display:grid; gap:1rem;">
-        <div style="background:#f8fafc; padding:1rem; border-radius:10px; border:1px solid var(--border);">
-          <h4 style="color:var(--primary); margin-bottom:0.4rem;">Paso 1: Estructura de carpetas recomendada para tu repositorio</h4>
+        <div style="background:var(--surface-alt); padding:1rem; border-radius:10px; border:1px solid var(--border);">
+          <h4 style="color:var(--primary-text); margin-bottom:0.4rem;">Paso 1: Estructura de carpetas recomendada para tu repositorio</h4>
           <pre style="background:#0f172a; color:#f8fafc; padding:0.9rem; border-radius:8px; overflow-x:auto; font-size:0.82rem;">
 📁 electromedicina-qr/ (Tu repositorio en GitHub)
  ├── 📄 index.html          (Este archivo web renombrado a index.html)
@@ -1729,8 +1782,8 @@ function renderGithubGuideView(container) {
  └── 📁 manuales/           (Opcional: carpeta para subir los PDFs: EQ-01.pdf, etc.)</pre>
         </div>
 
-        <div style="background:#f8fafc; padding:1rem; border-radius:10px; border:1px solid var(--border);">
-          <h4 style="color:var(--primary); margin-bottom:0.4rem;">Paso 2: Subir los archivos y activar GitHub Pages</h4>
+        <div style="background:var(--surface-alt); padding:1rem; border-radius:10px; border:1px solid var(--border);">
+          <h4 style="color:var(--primary-text); margin-bottom:0.4rem;">Paso 2: Subir los archivos y activar GitHub Pages</h4>
           <ol style="margin-left:1.2rem; font-size:0.88rem; display:grid; gap:0.4rem;">
             <li>Crea una cuenta gratuita en <a href="https://github.com" target="_blank">github.com</a> y pulsa en <strong>New repository</strong>.</li>
             <li>Ponle de nombre <code>electromedicina-qr</code>, márcalo como <strong>Public</strong> y pulsa <strong>Create repository</strong>.</li>
@@ -2016,7 +2069,7 @@ function renderEquipoFormView(container, existingEq) {
         <div class="form-grid">
           <div class="form-field">
             <label>ID / Código QR del Equipo *</label>
-            <input type="text" id="eqFormId" value="${nextId}" ${isEdit ? 'readonly style="background:#e2e8f0;"' : ''} placeholder="Ej: EQ-13" />
+            <input type="text" id="eqFormId" value="${nextId}" ${isEdit ? 'readonly style="background:var(--input-readonly);"' : ''} placeholder="Ej: EQ-13" />
           </div>
           <div class="form-field">
             <label>Familia Funcional *</label>
@@ -2333,6 +2386,40 @@ function downloadUpdatedHtml() {
   URL.revokeObjectURL(url);
 }
 
+
+const THEME_STORAGE_KEY = "electromedicina_theme_pref";
+
+function applyTheme(theme) {
+  const isDark = theme === "dark";
+  if (isDark) {
+    document.documentElement.setAttribute("data-theme", "dark");
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+  const btn = document.getElementById("themeToggleBtn");
+  if (btn) {
+    btn.innerHTML = isDark ? "☀️ Modo Claro" : "🌙 Modo Oscuro";
+  }
+}
+
+function initTheme() {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || (appState && appState.theme) || "light";
+  applyTheme(savedTheme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  const next = current === "dark" ? "light" : "dark";
+  localStorage.setItem(THEME_STORAGE_KEY, next);
+  if (appState) {
+    appState.theme = next;
+    saveState();
+  }
+  applyTheme(next);
+  showToast(next === "dark" ? "🌙 Tema oscuro activado" : "☀️ Tema claro activado");
+}
+
+initTheme();
 render();
 </script>
 </body>
