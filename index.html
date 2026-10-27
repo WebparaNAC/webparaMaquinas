@@ -1020,33 +1020,39 @@ function renderTabContent(eq) {
 
   if (currentTab === "fotos") {
     const galeria = eq.galeria || [];
+    const currentCover = getPrimaryImageUrl(eq);
     return `
       <div class="panel">
-        <h3>2. Galería de Fotografías del Equipo y Despiece</h3>
-        <p class="sub">Puedes subir fotos tomadas directamente con la cámara del móvil/ordenador o escribir la ruta de la carpeta <code>fotos/</code> de tu repositorio de GitHub.</p>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.35rem;">
+          <h3>2. Galería de Fotografías e Imagen de Portada</h3>
+          ${currentCover ? `<button class="btn btn-light no-print" onclick="clearCoverPhoto('${eq.id}')">🚫 Quitar Imagen de la Pantalla Inicial</button>` : ''}
+        </div>
+        <p class="sub">Al subir una foto o añadir una URL, aparecerá automáticamente como portada de esta máquina en la pantalla inicial (y si la máquina también tiene modelo 3D, al pasar el ratón por encima cambiará al modelo 3D).</p>
 
         <div class="log-form no-print">
-          <h4 style="margin-bottom:0.75rem; color:var(--primary);">📸 Añadir Nueva Fotografía a este Equipo</h4>
+          <h4 style="margin-bottom:0.75rem; color:var(--primary);">📸 Subir o Añadir Fotografía al Equipo</h4>
           <div class="form-grid">
             <div class="form-field">
-              <label>Opción A: Subir foto desde tu Móvil o PC</label>
+              <label>Opción A: Subir foto desde tu PC o Móvil (se guarda como portada)</label>
               <input type="file" id="newPhotoFile" accept="image/*" onchange="handleNewPhotoFile(event, '${eq.id}')" />
             </div>
             <div class="form-field">
               <label>Opción B: Ruta en GitHub o URL de imagen</label>
-              <input type="text" id="newPhotoUrl" placeholder="Ej: fotos/despiece_placa.jpg o https://..." />
+              <input type="text" id="newPhotoUrl" placeholder="Ej: fotos/35735.jpg o https://..." />
             </div>
             <div class="form-field">
               <label>Título / Descripción de la Foto</label>
-              <input type="text" id="newPhotoTitle" placeholder="Ej: Placa fuente alimentación desmontada" />
+              <input type="text" id="newPhotoTitle" placeholder="Ej: Vista frontal del equipo" />
             </div>
           </div>
           <button class="btn btn-success" onclick="addPhotoByUrl('${eq.id}')">➕ Añadir Foto por Ruta/URL</button>
         </div>
 
         <div class="photo-grid">
-          ${galeria.map((f, idx) => `
-            <div class="photo-card">
+          ${galeria.map((f, idx) => {
+            const isCover = currentCover === f.url;
+            return `
+            <div class="photo-card" style="${isCover ? 'border: 2px solid var(--primary-light);' : ''}">
               <div class="photo-thumb-wrap" onclick="openLightbox('${f.url}', '${f.titulo}')">
                 <img src="${f.url}" alt="${f.titulo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
                 <div class="photo-fallback" style="display:none;">
@@ -1057,81 +1063,92 @@ function renderTabContent(eq) {
               </div>
               <div class="photo-meta">
                 <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${f.titulo}">
-                  <strong>${f.titulo}</strong><br/>
-                  <span style="font-size:0.72rem; color:var(--muted);">${f.url.startsWith('data:') ? 'Imagen subida localmente' : f.url}</span>
+                  <strong>${isCover ? '⭐ ' : ''}${f.titulo}</strong><br/>
+                  <span style="font-size:0.72rem; color:var(--muted);">${f.url.startsWith('data:') ? 'Imagen guardada en web' : f.url}</span>
                 </div>
-                <button class="btn btn-light no-print" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="deletePhoto('${eq.id}', ${idx})" title="Eliminar foto">🗑️</button>
+                <div style="display:flex; gap:0.25rem;" class="no-print">
+                  <button class="btn btn-light" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="setCoverPhoto('${eq.id}', ${idx})" title="Usar como imagen en la pantalla inicial">⭐</button>
+                  <button class="btn btn-light" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="deletePhoto('${eq.id}', ${idx})" title="Eliminar foto">🗑️</button>
+                </div>
               </div>
             </div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
       </div>
     `;
   }
 
   if (currentTab === "modelo3d") {
-    const localObj = sessionObjectUrls[eq.id];
-    const activeModelUrl = localObj ? localObj.url : eq.modelo3d;
-    const isGlb = localObj
-      ? (localObj.type === "glb")
-      : (activeModelUrl.toLowerCase().endsWith(".glb") || activeModelUrl.toLowerCase().endsWith(".gltf"));
+    const info3d = getActive3DInfo(eq);
+    const activeModelUrl = info3d ? info3d.url : "";
+    const isGlb = info3d ? (info3d.type === "glb") : false;
 
-    const viewerHtml = isGlb
-      ? `<model-viewer
-            id="mv-${eq.id}"
-            src="${activeModelUrl}"
-            alt="Modelo 3D de ${eq.nombre}"
-            auto-rotate
-            camera-controls
-            ar
-            ar-modes="webxr scene-viewer quick-look"
-            shadow-intensity="1"
-            exposure="1">
-            <div slot="poster" style="color:#fff; text-align:center; padding:2rem;">
-              Cargando visor 3D (.glb / .gltf)...
-            </div>
-          </model-viewer>`
-      : `<iframe
-            src="${activeModelUrl}"
-            title="Modelo 3D HTML de ${eq.nombre}"
-            style="width:100%; height:100%; border:none; background:#0f172a;"
-            allow="fullscreen; xr-spatial-tracking; accelerometer; gyroscope"
-            allowfullscreen>
-          </iframe>`;
+    const viewerHtml = !info3d
+      ? `<div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#cbd5e1; padding:2rem; text-align:center;">
+          <div style="font-size:3rem; margin-bottom:0.75rem;">🧊</div>
+          <h4 style="color:#fff; margin-bottom:0.4rem;">Esta máquina aún no tiene un Modelo 3D asignado</h4>
+          <p style="font-size:0.85rem; max-width:520px;">Sube tu archivo <strong><code>.html</code></strong> o <strong><code>.glb</code></strong> usando el botón inferior, o escribe su ruta en GitHub. Cuando la máquina tenga tanto imagen como modelo 3D, en la pantalla de inicio cambiará de la foto al modelo 3D al pasar el cursor por encima.</p>
+        </div>`
+      : (isGlb
+        ? `<model-viewer
+              id="mv-${eq.id}"
+              src="${activeModelUrl}"
+              alt="Modelo 3D de ${eq.nombre}"
+              auto-rotate
+              camera-controls
+              ar
+              ar-modes="webxr scene-viewer quick-look"
+              shadow-intensity="1"
+              exposure="1">
+              <div slot="poster" style="color:#fff; text-align:center; padding:2rem;">
+                Cargando visor 3D (.glb / .gltf)...
+              </div>
+            </model-viewer>`
+        : `<iframe
+              src="${activeModelUrl}"
+              title="Modelo 3D HTML de ${eq.nombre}"
+              style="width:100%; height:100%; border:none; background:#0f172a;"
+              allow="fullscreen; xr-spatial-tracking; accelerometer; gyroscope"
+              allowfullscreen>
+            </iframe>`);
 
     return `
       <div class="panel">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.35rem;">
           <h3>3. Visor Interactivo de Modelos 3D (Soporta <code>.html</code> y <code>.glb / .gltf</code>)</h3>
-          <a class="btn btn-light no-print" href="${activeModelUrl}" target="_blank" rel="noopener">🖥️ Abrir 3D en Pantalla Completa ↗</a>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;" class="no-print">
+            ${activeModelUrl ? `<a class="btn btn-light" href="${activeModelUrl}" target="_blank" rel="noopener">🖥️ Abrir 3D en Pantalla Completa ↗</a>` : ''}
+            ${info3d ? `<button class="btn btn-danger" onclick="clear3DModel('${eq.id}')">🗑️ Quitar Modelo 3D</button>` : ''}
+          </div>
         </div>
-        <p class="sub">Detecta automáticamente si tu modelo 3D es una página interactiva <strong><code>.html</code></strong> (visor integrado) o un archivo <strong><code>.glb / .gltf</code></strong>.</p>
+        <p class="sub">Sube directamente tu archivo <strong><code>.html</code></strong> (quedará guardado en la memoria de la web y al descargar el HTML para GitHub) o enlaza un archivo de tu repositorio.</p>
 
         <div class="viewer-3d-wrap" style="height: 520px;">
           ${viewerHtml}
         </div>
 
         <div class="viewer-controls-bar no-print">
-          <div style="flex:1; min-width:250px;">
-            <label style="font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.25rem;">🔗 Ruta de tu archivo 3D (<code>.html</code> o <code>.glb</code>) en tu repositorio GitHub:</label>
+          <div>
+            <label style="font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.25rem;">📂 Opción 1: Subir y guardar tu archivo <code>.html</code> o <code>.glb</code> desde tu PC/Móvil:</label>
+            <input type="file" accept=".html,.htm,.glb,.gltf" onchange="loadLocal3DModel(event, '${eq.id}')" />
+          </div>
+
+          <div style="flex:1; min-width:240px;">
+            <label style="font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.25rem;">🔗 Opción 2: Ruta de tu archivo 3D (<code>.html</code> o <code>.glb</code>) en tu GitHub:</label>
             <div style="display:flex; gap:0.5rem;">
-              <input type="text" style="flex:1;" value="${eq.modelo3d}" placeholder="Ej: models/${eq.id}.html o modelo3d.html" onchange="delete sessionObjectUrls['${eq.id}']; updateEqMeta('${eq.id}', 'modelo3d', this.value)" />
-              <button class="btn btn-primary" onclick="render()">🔄 Recargar</button>
+              <input type="text" style="flex:1;" value="${eq.modelo3d || ''}" placeholder="Ej: models/${eq.id}.html o modelo3d.html" onchange="setCustom3DPath('${eq.id}', this.value)" />
+              <button class="btn btn-primary" onclick="render()">🔄 Aplicar</button>
             </div>
           </div>
 
           <div>
-            <label style="font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.25rem;">📂 Probar tu archivo <code>.html</code> o <code>.glb</code> desde tu PC/Móvil:</label>
-            <input type="file" accept=".html,.htm,.glb,.gltf" onchange="loadLocal3DModel(event, '${eq.id}')" />
-          </div>
-
-          <div>
-            <label style="font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.25rem;">🧪 Selector rápido de formato / demostración:</label>
-            <select onchange="if(this.value) { delete sessionObjectUrls['${eq.id}']; updateEqMeta('${eq.id}', 'modelo3d', this.value); }">
-              <option value="">-- Cambiar ruta o probar demo --</option>
-              <option value="models/${eq.id}.html">📄 Formato HTML en carpeta (models/${eq.id}.html)</option>
-              <option value="${eq.id}.html">📄 Formato HTML en raíz (${eq.id}.html)</option>
-              <option value="models/${eq.id}.glb">🧊 Formato GLB en carpeta (models/${eq.id}.glb)</option>
+            <label style="font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.25rem;">🧪 Selector rápido / Modelos Demo:</label>
+            <select onchange="if(this.value) { setCustom3DPath('${eq.id}', this.value); }">
+              <option value="">-- Seleccionar ruta o demo --</option>
+              <option value="models/${eq.id}.html">📄 Ruta en carpeta (models/${eq.id}.html)</option>
+              <option value="${eq.id}.html">📄 Ruta en raíz (${eq.id}.html)</option>
+              <option value="models/${eq.id}.glb">🧊 Ruta GLB (models/${eq.id}.glb)</option>
               <option value="https://modelviewer.dev/shared-assets/models/Astronaut.glb">🚀 Demo 3D 1 (.glb)</option>
               <option value="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb">🤖 Demo 3D 2 (.glb)</option>
             </select>
@@ -1388,16 +1405,42 @@ function updateDespiece(eqId, idx, field, value) {
   if (field === 'estado') render();
 }
 
+// Comprime automáticamente cualquier imagen subida para que ocupe muy poco espacio y se guarde siempre sin errores
+function compressImageFile(file, maxWidth, quality, callback) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      let w = img.width;
+      let h = img.height;
+      if (w > maxWidth) {
+        h = Math.round((h * maxWidth) / w);
+        w = maxWidth;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+      callback(compressedDataUrl);
+    };
+    img.onerror = function() {
+      callback(e.target.result);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function uploadDespiecePhoto(event, eqId, idx) {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    appState.equipos[eqId].despiece[idx].foto = e.target.result;
+  compressImageFile(file, 900, 0.82, function(dataUrl) {
+    appState.equipos[eqId].despiece[idx].foto = dataUrl;
     saveState();
     render();
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 function handleNewPhotoFile(event, eqId) {
@@ -1405,18 +1448,19 @@ function handleNewPhotoFile(event, eqId) {
   if (!file) return;
   const titleInput = document.getElementById("newPhotoTitle");
   const titulo = (titleInput && titleInput.value.trim()) ? titleInput.value.trim() : file.name;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    if (!appState.equipos[eqId].galeria) appState.equipos[eqId].galeria = [];
-    appState.equipos[eqId].galeria.unshift({
-      url: e.target.result,
+  compressImageFile(file, 900, 0.82, function(dataUrl) {
+    const eq = appState.equipos[eqId];
+    if (!eq.galeria) eq.galeria = [];
+    eq.galeria.unshift({
+      url: dataUrl,
       titulo: titulo,
       fecha: new Date().toISOString().slice(0,10)
     });
+    // Establecer automáticamente como imagen de portada en la pantalla inicial
+    eq.imagenPortada = dataUrl;
     saveState();
     render();
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 function addPhotoByUrl(eqId) {
@@ -1428,18 +1472,64 @@ function addPhotoByUrl(eqId) {
     return;
   }
   const titulo = (titleInput && titleInput.value.trim()) ? titleInput.value.trim() : url;
-  if (!appState.equipos[eqId].galeria) appState.equipos[eqId].galeria = [];
-  appState.equipos[eqId].galeria.unshift({
+  const eq = appState.equipos[eqId];
+  if (!eq.galeria) eq.galeria = [];
+  eq.galeria.unshift({
     url: url,
     titulo: titulo,
     fecha: new Date().toISOString().slice(0,10)
   });
+  eq.imagenPortada = url;
   saveState();
   render();
 }
 
+function setCoverPhoto(eqId, idx) {
+  const eq = appState.equipos[eqId];
+  if (eq && eq.galeria && eq.galeria[idx]) {
+    eq.imagenPortada = eq.galeria[idx].url;
+    saveState();
+    render();
+  }
+}
+
+function clearCoverPhoto(eqId) {
+  const eq = appState.equipos[eqId];
+  if (eq) {
+    eq.imagenPortada = "";
+    saveState();
+    render();
+  }
+}
+
 function deletePhoto(eqId, idx) {
-  appState.equipos[eqId].galeria.splice(idx, 1);
+  const eq = appState.equipos[eqId];
+  const removed = eq.galeria.splice(idx, 1)[0];
+  if (removed && eq.imagenPortada === removed.url) {
+    eq.imagenPortada = (eq.galeria.length > 0) ? eq.galeria[0].url : "";
+  }
+  saveState();
+  render();
+}
+
+function setCustom3DPath(eqId, val) {
+  const eq = appState.equipos[eqId];
+  delete sessionObjectUrls[eqId];
+  delete verified3DStatus[eqId];
+  eq.modelo3dHtml = "";
+  eq.modelo3d = val.trim();
+  eq.modelo3dCustom = !!val.trim();
+  saveState();
+  render();
+}
+
+function clear3DModel(eqId) {
+  const eq = appState.equipos[eqId];
+  delete sessionObjectUrls[eqId];
+  delete verified3DStatus[eqId];
+  eq.modelo3dHtml = "";
+  eq.modelo3d = "";
+  eq.modelo3dCustom = false;
   saveState();
   render();
 }
@@ -1449,9 +1539,32 @@ function loadLocal3DModel(event, eqId) {
   if (!file) return;
   const name = file.name.toLowerCase();
   const isGlb = name.endsWith(".glb") || name.endsWith(".gltf");
-  const objUrl = URL.createObjectURL(file);
-  sessionObjectUrls[eqId] = { url: objUrl, type: isGlb ? "glb" : "html", name: file.name };
-  render();
+  const eq = appState.equipos[eqId];
+
+  if (!isGlb) {
+    // Es un modelo 3D en formato .html: leer su contenido y guardarlo en el estado del equipo para que funcione siempre (incluso en la pantalla inicial al pasar el ratón)
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const htmlContent = e.target.result;
+      eq.modelo3dHtml = htmlContent;
+      eq.modelo3d = file.name;
+      eq.modelo3dCustom = true;
+      const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+      sessionObjectUrls[eqId] = { url: URL.createObjectURL(blob), type: "html", name: file.name };
+      verified3DStatus[eqId] = true;
+      saveState();
+      render();
+    };
+    reader.readAsText(file);
+  } else {
+    const objUrl = URL.createObjectURL(file);
+    sessionObjectUrls[eqId] = { url: objUrl, type: "glb", name: file.name };
+    eq.modelo3d = file.name;
+    eq.modelo3dCustom = true;
+    verified3DStatus[eqId] = true;
+    saveState();
+    render();
+  }
 }
 
 function updateChecklist(eqId, idx, field, value) {
@@ -1600,8 +1713,9 @@ function renderEquipoFormView(container, existingEq) {
             <input type="text" id="eqFormSat" value="${isEdit ? existingEq.sat : ''}" placeholder="Ej: Fabricante / Servicio Técnico Oficial" />
           </div>
           <div class="form-field">
-            <label>Ruta del Modelo 3D (.html o .glb)</label>
-            <input type="text" id="eqFormModelo3d" value="${isEdit ? existingEq.modelo3d : `models/${nextId}.html`}" placeholder="Ej: models/${nextId}.html" />
+            <label>Ruta o Archivo del Modelo 3D (.html o .glb) — Opcional</label>
+            <input type="text" id="eqFormModelo3d" value="${isEdit ? (existingEq.modelo3d || '') : ''}" placeholder="Dejar vacío o ej: models/${nextId}.html" />
+            <input type="file" id="eqFormModelo3dFile" accept=".html,.htm,.glb,.gltf" style="margin-top:0.35rem; font-size:0.78rem;" />
           </div>
         </div>
 
@@ -1621,8 +1735,9 @@ function renderEquipoFormView(container, existingEq) {
             <input type="text" id="eqFormManualTitulo" value="${isEdit ? existingEq.manual_titulo : ''}" placeholder="Ej: Service & Operator Manual PDF" />
           </div>
           <div class="form-field">
-            <label>Ruta Foto Inicial (o subir después en su galería)</label>
-            <input type="text" id="eqFormFoto" value="${isEdit && existingEq.imagenes && existingEq.imagenes[0] ? existingEq.imagenes[0] : `fotos/${nextId}.jpg`}" placeholder="Ej: fotos/${nextId}.jpg" />
+            <label>Imagen del Equipo (Subir archivo o ruta) — Opcional</label>
+            <input type="text" id="eqFormFoto" value="${isEdit ? (getPrimaryImageUrl(existingEq).startsWith('data:') ? '[Imagen guardada en web]' : getPrimaryImageUrl(existingEq)) : ''}" placeholder="Dejar vacío o ej: fotos/${nextId}.jpg" />
+            <input type="file" id="eqFormFotoFile" accept="image/*" style="margin-top:0.35rem; font-size:0.78rem;" />
           </div>
         </div>
 
@@ -1663,11 +1778,13 @@ function saveEquipoForm(isEdit) {
   const tension = document.getElementById("eqFormTension").value.trim() || "230 V~";
   const consumo = document.getElementById("eqFormConsumo").value.trim() || "No visible";
   const sat = document.getElementById("eqFormSat").value.trim() || marca;
-  const modelo3d = document.getElementById("eqFormModelo3d").value.trim() || `models/${rawId}.html`;
+  const modelo3dInput = document.getElementById("eqFormModelo3d").value.trim();
+  const modelo3dFile = document.getElementById("eqFormModelo3dFile").files[0];
   const estado_catalogo = document.getElementById("eqFormCatalogo").value;
   const equivalente = document.getElementById("eqFormEquivalente").value.trim() || `${marca} ${modelo}`;
   const manual_titulo = document.getElementById("eqFormManualTitulo").value.trim() || `${marca} ${modelo} User & Service Manual`;
-  const fotoInicial = document.getElementById("eqFormFoto").value.trim();
+  const fotoInput = document.getElementById("eqFormFoto").value.trim();
+  const fotoFile = document.getElementById("eqFormFotoFile").files[0];
   const descripcion = document.getElementById("eqFormDesc").value.trim() || `${nombre} ${marca} ${modelo}.`;
 
   if (isEdit) {
@@ -1682,14 +1799,29 @@ function saveEquipoForm(isEdit) {
     eq.tension = tension;
     eq.consumo = consumo;
     eq.sat = sat;
-    eq.modelo3d = modelo3d;
+    if (modelo3dInput !== eq.modelo3d && !modelo3dFile) {
+      eq.modelo3d = modelo3dInput;
+      eq.modelo3dCustom = !!modelo3dInput;
+      if (!modelo3dInput) {
+        eq.modelo3dHtml = "";
+        delete sessionObjectUrls[rawId];
+      }
+    }
+    if (fotoInput !== "[Imagen guardada en web]" && !fotoFile) {
+      eq.imagenPortada = fotoInput;
+      if (fotoInput && (!eq.galeria || !eq.galeria.some(g => g.url === fotoInput))) {
+        if (!eq.galeria) eq.galeria = [];
+        eq.galeria.unshift({ url: fotoInput, titulo: "Imagen de portada", fecha: new Date().toISOString().slice(0,10) });
+      }
+    }
     eq.estado_catalogo = estado_catalogo;
     eq.equivalente = equivalente;
     eq.manual_titulo = manual_titulo;
     eq.manual_query = `${marca} ${modelo} manual PDF`;
     eq.descripcion = descripcion;
   } else {
-    const imagenesArr = fotoInicial ? [fotoInicial] : [];
+    const cleanFoto = (fotoInput && fotoInput !== "[Imagen guardada en web]") ? fotoInput : "";
+    const imagenesArr = cleanFoto ? [cleanFoto] : [];
     appState.equipos[rawId] = {
       id: rawId,
       familia,
@@ -1707,7 +1839,9 @@ function saveEquipoForm(isEdit) {
       manual_titulo,
       manual_query: `${marca} ${modelo} manual PDF`,
       imagenes: imagenesArr,
-      modelo3d,
+      imagenPortada: cleanFoto,
+      modelo3d: modelo3dInput,
+      modelo3dCustom: !!modelo3dInput,
       descripcion,
       grupoAsignado: "",
       estadoGlobal: "Pendiente de Diagnóstico",
@@ -1718,7 +1852,7 @@ function saveEquipoForm(isEdit) {
         fecha: new Date().toISOString().slice(0,10)
       })),
       despiece: [
-        { id: 1, subsistema: "Panel de control e interfaz de usuario", funcion: "Pantalla, indicadores visuales, interruptores y controles de operación frontal.", estado: "Pendiente", ref: "", foto: fotoInicial || "", obs: "" },
+        { id: 1, subsistema: "Panel de control e interfaz de usuario", funcion: "Pantalla, indicadores visuales, interruptores y controles de operación frontal.", estado: "Pendiente", ref: "", foto: cleanFoto || "", obs: "" },
         { id: 2, subsistema: "Fuente de alimentación y protecciones", funcion: "Entrada de red eléctrica, portafusibles, transformador/fuente conmutada y toma de tierra.", estado: "Pendiente", ref: "", foto: "", obs: "" },
         { id: 3, subsistema: "Módulo funcional principal / Actuadores", funcion: "Bloque principal de trabajo del equipo (sensores, motor, lámpara, cámara o generador).", estado: "Pendiente", ref: "", foto: "", obs: "" },
         { id: 4, subsistema: "Chasis, carcasa y conectores externos", funcion: "Estructura envolvente, soportes, tomas de paciente/accesorios y ventilación.", estado: "Pendiente", ref: "", foto: "", obs: "" }
@@ -1744,8 +1878,49 @@ function saveEquipoForm(isEdit) {
     };
   }
 
-  saveState();
-  openEquipo(rawId, "despiece");
+  // Procesar archivos subidos directamente en el formulario (Imagen y/o Modelo 3D)
+  const finishSave = () => {
+    saveState();
+    goHome();
+  };
+
+  const process3DFile = (nextStep) => {
+    if (!modelo3dFile) { nextStep(); return; }
+    const name = modelo3dFile.name.toLowerCase();
+    const isGlb = name.endsWith(".glb") || name.endsWith(".gltf");
+    const eq = appState.equipos[rawId];
+    if (!isGlb) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        eq.modelo3dHtml = e.target.result;
+        eq.modelo3d = modelo3dFile.name;
+        eq.modelo3dCustom = true;
+        const blob = new Blob([eq.modelo3dHtml], { type: "text/html;charset=utf-8" });
+        sessionObjectUrls[rawId] = { url: URL.createObjectURL(blob), type: "html", name: modelo3dFile.name };
+        verified3DStatus[rawId] = true;
+        nextStep();
+      };
+      reader.readAsText(modelo3dFile);
+    } else {
+      sessionObjectUrls[rawId] = { url: URL.createObjectURL(modelo3dFile), type: "glb", name: modelo3dFile.name };
+      eq.modelo3d = modelo3dFile.name;
+      eq.modelo3dCustom = true;
+      verified3DStatus[rawId] = true;
+      nextStep();
+    }
+  };
+
+  if (fotoFile) {
+    compressImageFile(fotoFile, 900, 0.82, function(dataUrl) {
+      const eq = appState.equipos[rawId];
+      eq.imagenPortada = dataUrl;
+      if (!eq.galeria) eq.galeria = [];
+      eq.galeria.unshift({ url: dataUrl, titulo: fotoFile.name, fecha: new Date().toISOString().slice(0,10) });
+      process3DFile(finishSave);
+    });
+  } else {
+    process3DFile(finishSave);
+  }
 }
 
 function deleteEquipo(eqId) {
