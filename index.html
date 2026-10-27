@@ -527,8 +527,9 @@
     </div>
     <div class="top-actions">
       <button class="btn btn-outline" onclick="goHome()">🏠 Equipos</button>
+      <button class="btn btn-success" onclick="showNewEquipoForm()">➕ Añadir Máquina</button>
       <button class="btn btn-outline" onclick="showQrSheet()">🏁 Etiquetas QR</button>
-      <button class="btn btn-outline" onclick="showGithubGuide()">🐙 Guía GitHub Pages</button>
+      <button class="btn btn-outline" onclick="downloadUpdatedHtml()" title="Descarga el archivo index.html con todas las máquinas nuevas incluidas listo para subir a GitHub">📥 Descargar HTML para GitHub</button>
       <button class="btn btn-outline" onclick="exportData()">💾 Exportar JSON</button>
       <label class="btn btn-outline" style="cursor:pointer;">
         📂 Importar JSON
@@ -565,7 +566,44 @@ const sessionObjectUrls = {};
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
-    try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    try {
+      const parsed = JSON.parse(saved);
+      // Si se añadieron máquinas nuevas en el código HTML de GitHub, incorporarlas automáticamente
+      INITIAL_EQUIPOS.forEach(eq => {
+        if (!parsed.equipos[eq.id]) {
+          parsed.equipos[eq.id] = {
+            ...eq,
+            grupoAsignado: eq.grupoAsignado || "",
+            estadoGlobal: eq.estadoGlobal || "Pendiente de Diagnóstico",
+            urlManualDrive: eq.urlManualDrive || "",
+            galeria: eq.galeria || (eq.imagenes || []).map(img => ({
+              url: img,
+              titulo: "Foto de referencia (" + img.replace("fotos/", "") + ")",
+              fecha: "2026-10-14"
+            })),
+            checklist: eq.checklist || BASE_CHECKLIST.map(item => ({
+              ...item,
+              resultado: "Pendiente",
+              prioridad: "Media",
+              responsable: "",
+              hallazgos: ""
+            })),
+            diario: eq.diario || [
+              {
+                fecha: "2026-10-14",
+                grupo: "Grupo Inicial",
+                tipo: "Diagnóstico Inicial",
+                sintoma: "Recepción en taller para identificación de placa y catalogación.",
+                acciones: "Inspección de placa de características, fotos de referencia y localización de manual.",
+                repuestos: "Ninguno",
+                estadoFinal: "Pendiente de pruebas"
+              }
+            ]
+          };
+        }
+      });
+      return parsed;
+    } catch (e) { console.error(e); }
   }
   const currentUrl = window.location.href.split('#')[0];
   const state = {
@@ -674,6 +712,14 @@ function closeLightbox() {
 
 window.addEventListener("hashchange", render);
 
+function showNewEquipoForm() {
+  window.location.hash = "NEW-EQ";
+}
+
+function showEditEquipoForm(eqId) {
+  window.location.hash = "EDIT-EQ:" + eqId;
+}
+
 function render() {
   const hash = window.location.hash.replace("#", "").trim();
   const app = document.getElementById("app");
@@ -681,6 +727,15 @@ function render() {
     renderQrPrintView(app);
   } else if (hash === "GITHUB-GUIDE") {
     renderGithubGuideView(app);
+  } else if (hash === "NEW-EQ") {
+    renderEquipoFormView(app, null);
+  } else if (hash.startsWith("EDIT-EQ:")) {
+    const eqId = hash.split(":")[1];
+    if (appState.equipos[eqId]) {
+      renderEquipoFormView(app, appState.equipos[eqId]);
+    } else {
+      renderHomeView(app);
+    }
   } else if (hash && appState.equipos[hash]) {
     renderDetailView(app, appState.equipos[hash]);
   } else {
@@ -688,17 +743,95 @@ function render() {
   }
 }
 
-function renderHomeView(container) {
+function buildCardsHtml() {
   const list = Object.values(appState.equipos);
-  const families = ["Todas", ...new Set(list.map(e => e.familia))];
-
   const filtered = list.filter(eq => {
     const matchFam = filterFamily === "Todas" || eq.familia === filterFamily;
     const matchStat = filterStatus === "Todos" || eq.estadoGlobal === filterStatus;
-    const q = searchQuery.toLowerCase();
-    const matchQ = !q || eq.nombre.toLowerCase().includes(q) || eq.marca.toLowerCase().includes(q) || eq.modelo.toLowerCase().includes(q) || eq.id.toLowerCase().includes(q) || eq.sn.toLowerCase().includes(q);
+    const q = searchQuery.toLowerCase().trim();
+    const matchQ = !q ||
+      (eq.nombre && eq.nombre.toLowerCase().includes(q)) ||
+      (eq.marca && eq.marca.toLowerCase().includes(q)) ||
+      (eq.modelo && eq.modelo.toLowerCase().includes(q)) ||
+      (eq.id && eq.id.toLowerCase().includes(q)) ||
+      (eq.sn && eq.sn.toLowerCase().includes(q)) ||
+      (eq.familia && eq.familia.toLowerCase().includes(q));
     return matchFam && matchStat && matchQ;
   });
+
+  if (filtered.length === 0) {
+    return `
+      <div class="panel" style="grid-column: 1 / -1; text-align:center; padding: 2.5rem;">
+        <h3 style="margin-bottom:0.5rem;">🔍 No se encontraron máquinas con ese criterio</h3>
+        <p class="sub">Prueba con otro término de búsqueda o añade un nuevo equipo al inventario.</p>
+        <button class="btn btn-success" onclick="showNewEquipoForm()">➕ Añadir Nueva Máquina</button>
+      </div>
+    `;
+  }
+
+  return filtered.map(eq => {
+    const prog = calcChecklistProgress(eq);
+    const numFotos = eq.galeria ? eq.galeria.length : (eq.imagenes ? eq.imagenes.length : 0);
+    return `
+    <div class="card">
+      <div class="card-header">
+        <span class="eq-id">${eq.id}</span>
+        <span class="family-tag">${eq.icono || '🛠️'} ${eq.familia}</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">${eq.nombre}</div>
+        <div class="card-sub">${eq.marca} — ${eq.modelo}</div>
+        <ul class="meta-list">
+          <li><span>S/N o Inv.:</span> <strong>${eq.sn}</strong></li>
+          <li><span>Año Fab.:</span> <strong>${eq.anio}</strong></li>
+          <li><span>Multimedia:</span> <strong>📸 ${numFotos} fotos | 🧊 3D (${eq.modelo3d})</strong></li>
+          <li><span>Grupo Asignado:</span> <strong>${eq.grupoAsignado || 'Sin asignar'}</strong></li>
+        </ul>
+        <div style="margin-bottom:0.6rem;">
+          <span class="badge ${getBadgeClass(eq.estadoGlobal)}">${eq.estadoGlobal}</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label">
+            <span>Checklist Diagnóstico</span>
+            <span>${prog}% completado</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${prog}%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div style="display:flex; gap:0.35rem;">
+          <button class="btn btn-light" style="padding:0.4rem 0.6rem; font-size:0.78rem;" onclick="openEquipo('${eq.id}', 'fotos')" title="Ver Fotos">📸</button>
+          <button class="btn btn-light" style="padding:0.4rem 0.6rem; font-size:0.78rem;" onclick="openEquipo('${eq.id}', 'modelo3d')" title="Ver Modelo 3D">🧊 3D</button>
+        </div>
+        <button class="btn btn-primary" onclick="openEquipo('${eq.id}', 'despiece')">Abrir Ficha QR →</button>
+      </div>
+    </div>
+    `;
+  }).join('');
+}
+
+function handleSearchInput(val) {
+  searchQuery = val;
+  const gridEl = document.getElementById("home-cards-grid");
+  if (gridEl) {
+    gridEl.innerHTML = buildCardsHtml();
+  }
+}
+
+function handleFilterChange() {
+  const gridEl = document.getElementById("home-cards-grid");
+  if (gridEl) {
+    gridEl.innerHTML = buildCardsHtml();
+  } else {
+    render();
+  }
+}
+
+function renderHomeView(container) {
+  const list = Object.values(appState.equipos);
+  const families = ["Todas", ...new Set(list.map(e => e.familia))];
 
   const totalEq = list.length;
   const operativos = list.filter(e => e.estadoGlobal === "Operativo (OK)").length;
@@ -706,7 +839,7 @@ function renderHomeView(container) {
   const totalFotos = list.reduce((acc, e) => acc + (e.galeria ? e.galeria.length : 0), 0);
 
   container.innerHTML = `
-    <div class="stats-bar">
+    <div class="stats-bar" id="home-stats-bar">
       <div class="stat-card">
         <h4>Total Equipos Inventariados</h4>
         <div class="val">${totalEq}</div>
@@ -721,19 +854,25 @@ function renderHomeView(container) {
       </div>
       <div class="stat-card" style="border-left-color: #8b5cf6;">
         <h4>Fotos y Modelos 3D</h4>
-        <div class="val">${totalFotos} 📸 / 12 🧊</div>
+        <div class="val">${totalFotos} 📸 / ${totalEq} 🧊</div>
       </div>
     </div>
 
     <div class="toolbar">
       <div class="search-box">
-        <input type="text" placeholder="🔍 Buscar por código (EQ-01), marca, modelo, nº de serie..." value="${searchQuery}" oninput="searchQuery=this.value; render();" />
+        <input
+          type="text"
+          id="mainSearchInput"
+          placeholder="🔍 Buscar por código (EQ-01), nombre, marca, modelo, nº de serie..."
+          value="${searchQuery}"
+          oninput="handleSearchInput(this.value)"
+        />
       </div>
       <div class="filter-group">
-        <select onchange="filterFamily=this.value; render();">
+        <select onchange="filterFamily=this.value; handleFilterChange();">
           ${families.map(f => `<option value="${f}" ${filterFamily===f?'selected':''}>Familia: ${f}</option>`).join('')}
         </select>
-        <select onchange="filterStatus=this.value; render();">
+        <select onchange="filterStatus=this.value; handleFilterChange();">
           <option value="Todos" ${filterStatus==='Todos'?'selected':''}>Estado: Todos</option>
           <option value="Pendiente de Diagnóstico" ${filterStatus==='Pendiente de Diagnóstico'?'selected':''}>Pendiente de Diagnóstico</option>
           <option value="Operativo (OK)" ${filterStatus==='Operativo (OK)'?'selected':''}>Operativo (OK)</option>
@@ -741,51 +880,12 @@ function renderHomeView(container) {
           <option value="Averiado / No Operativo" ${filterStatus==='Averiado / No Operativo'?'selected':''}>Averiado / No Operativo</option>
           <option value="Incompleto (Faltan Accesorios)" ${filterStatus==='Incompleto (Faltan Accesorios)'?'selected':''}>Incompleto (Faltan Accesorios)</option>
         </select>
+        <button class="btn btn-success" onclick="showNewEquipoForm()">➕ Añadir Nueva Máquina</button>
       </div>
     </div>
 
-    <div class="grid">
-      ${filtered.map(eq => {
-        const prog = calcChecklistProgress(eq);
-        const numFotos = eq.galeria ? eq.galeria.length : eq.imagenes.length;
-        return `
-        <div class="card">
-          <div class="card-header">
-            <span class="eq-id">${eq.id}</span>
-            <span class="family-tag">${eq.icono} ${eq.familia}</span>
-          </div>
-          <div class="card-body">
-            <div class="card-title">${eq.nombre}</div>
-            <div class="card-sub">${eq.marca} — ${eq.modelo}</div>
-            <ul class="meta-list">
-              <li><span>S/N o Inv.:</span> <strong>${eq.sn}</strong></li>
-              <li><span>Año Fab.:</span> <strong>${eq.anio}</strong></li>
-              <li><span>Multimedia:</span> <strong>📸 ${numFotos} fotos | 🧊 3D (${eq.modelo3d})</strong></li>
-              <li><span>Grupo Asignado:</span> <strong>${eq.grupoAsignado || 'Sin asignar'}</strong></li>
-            </ul>
-            <div style="margin-bottom:0.6rem;">
-              <span class="badge ${getBadgeClass(eq.estadoGlobal)}">${eq.estadoGlobal}</span>
-            </div>
-            <div class="progress-wrap">
-              <div class="progress-label">
-                <span>Checklist Diagnóstico</span>
-                <span>${prog}% completado</span>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" style="width:${prog}%"></div>
-              </div>
-            </div>
-          </div>
-          <div class="card-footer">
-            <div style="display:flex; gap:0.35rem;">
-              <button class="btn btn-light" style="padding:0.4rem 0.6rem; font-size:0.78rem;" onclick="openEquipo('${eq.id}', 'fotos')" title="Ver Fotos">📸</button>
-              <button class="btn btn-light" style="padding:0.4rem 0.6rem; font-size:0.78rem;" onclick="openEquipo('${eq.id}', 'modelo3d')" title="Ver Modelo 3D">🧊 3D</button>
-            </div>
-            <button class="btn btn-primary" onclick="openEquipo('${eq.id}', 'despiece')">Abrir Ficha QR →</button>
-          </div>
-        </div>
-        `;
-      }).join('')}
+    <div class="grid" id="home-cards-grid">
+      ${buildCardsHtml()}
     </div>
   `;
 }
@@ -798,8 +898,10 @@ function renderDetailView(container, eq) {
   container.innerHTML = `
     <div style="margin-bottom: 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;" class="no-print">
       <button class="btn btn-light" onclick="goHome()">← Volver al listado de equipos</button>
-      <div style="display:flex; gap:0.5rem;">
-        <button class="btn btn-light" onclick="window.print()">🖨️ Imprimir / Guardar Ficha PDF</button>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <button class="btn btn-light" onclick="showEditEquipoForm('${eq.id}')">✏️ Editar Ficha Técnica</button>
+        <button class="btn btn-light" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+        <button class="btn btn-danger" onclick="deleteEquipo('${eq.id}')">🗑️ Eliminar Máquina</button>
       </div>
     </div>
 
@@ -862,7 +964,10 @@ function renderTabContent(eq) {
   if (currentTab === "despiece") {
     return `
       <div class="panel">
-        <h3>1. Despiece Funcional y Subsistemas Internos</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.35rem;">
+          <h3>1. Despiece Funcional y Subsistemas Internos</h3>
+          <button class="btn btn-success no-print" onclick="addDespieceRow('${eq.id}')">➕ Añadir Componente al Despiece</button>
+        </div>
         <p class="sub">Identificación de los bloques constructivos del equipo, función técnica, estado de conservación y fotografía de cada pieza.</p>
         <div class="table-responsive">
           <table>
@@ -875,23 +980,24 @@ function renderTabContent(eq) {
                 <th>Código / Ref.</th>
                 <th>Foto Pieza (Ruta o Subir)</th>
                 <th>Observaciones del Grupo</th>
+                <th class="no-print">Acción</th>
               </tr>
             </thead>
             <tbody>
               ${eq.despiece.map((d, idx) => `
                 <tr>
-                  <td><strong>${d.id}</strong></td>
-                  <td><strong>${d.subsistema}</strong></td>
-                  <td>${d.funcion}</td>
+                  <td><strong>${idx + 1}</strong></td>
+                  <td><input type="text" value="${d.subsistema}" style="font-weight:700; width:100%; min-width:160px;" onchange="updateDespiece('${eq.id}', ${idx}, 'subsistema', this.value)" /></td>
+                  <td><input type="text" value="${d.funcion}" style="width:100%; min-width:220px;" onchange="updateDespiece('${eq.id}', ${idx}, 'funcion', this.value)" /></td>
                   <td>
                     <select onchange="updateDespiece('${eq.id}', ${idx}, 'estado', this.value)" class="badge ${getBadgeClass(d.estado)}" style="border:1px solid #cbd5e1;">
                       ${["Pendiente", "Correcto (OK)", "Desgastado / Sucio", "Dañado / Averiado", "Ausente / Falta"].map(st => `<option value="${st}" ${d.estado===st?'selected':''}>${st}</option>`).join('')}
                     </select>
                   </td>
-                  <td><input type="text" value="${d.ref}" placeholder="Ref..." style="width:100px;" onchange="updateDespiece('${eq.id}', ${idx}, 'ref', this.value)" /></td>
+                  <td><input type="text" value="${d.ref}" placeholder="Ref..." style="width:95px;" onchange="updateDespiece('${eq.id}', ${idx}, 'ref', this.value)" /></td>
                   <td>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
-                      <input type="text" value="${d.foto.startsWith('data:') ? '[Foto local cargada]' : d.foto}" placeholder="fotos/pieza.jpg" style="width:125px;" onchange="updateDespiece('${eq.id}', ${idx}, 'foto', this.value)" />
+                      <input type="text" value="${d.foto && d.foto.startsWith('data:') ? '[Foto local cargada]' : (d.foto || '')}" placeholder="fotos/pieza.jpg" style="width:120px;" onchange="updateDespiece('${eq.id}', ${idx}, 'foto', this.value)" />
                       ${d.foto ? `<button class="btn btn-light" style="padding:0.3rem 0.5rem;" onclick="openLightbox('${d.foto}', '${d.subsistema}')" title="Ver foto">👁️</button>` : ''}
                       <label class="btn btn-light" style="padding:0.3rem 0.5rem; cursor:pointer;" title="Subir foto desde móvil/PC">
                         📤
@@ -899,7 +1005,10 @@ function renderTabContent(eq) {
                       </label>
                     </div>
                   </td>
-                  <td><input type="text" value="${d.obs}" placeholder="Anotar estado, holguras, limpieza..." style="width:100%; min-width:170px;" onchange="updateDespiece('${eq.id}', ${idx}, 'obs', this.value)" /></td>
+                  <td><input type="text" value="${d.obs}" placeholder="Anotar estado, holguras, limpieza..." style="width:100%; min-width:150px;" onchange="updateDespiece('${eq.id}', ${idx}, 'obs', this.value)" /></td>
+                  <td class="no-print">
+                    <button class="btn btn-light" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="deleteDespieceRow('${eq.id}', ${idx})" title="Eliminar pieza">🗑️</button>
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1401,6 +1510,295 @@ function importData(event) {
     }
   };
   reader.readAsText(file);
+}
+
+
+function getNextEqId() {
+  const keys = Object.keys(appState.equipos);
+  let maxNum = 0;
+  keys.forEach(k => {
+    const m = k.match(/^EQ-(\d+)$/i);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > maxNum) maxNum = n;
+    }
+  });
+  const next = maxNum + 1;
+  return "EQ-" + (next < 10 ? "0" + next : next);
+}
+
+function renderEquipoFormView(container, existingEq) {
+  const isEdit = !!existingEq;
+  const nextId = isEdit ? existingEq.id : getNextEqId();
+  const families = ["UCI y Soporte Vital", "Equipamiento Dental", "Esterilización y Desinfección", "Endoscopia e Imagen Médica", "Dermoestética y Electroterapia", "Diagnóstico por Imagen", "Laboratorio / Otros"];
+  const icons = ["🫁", "❤️", "🦷", "🔬", "💡", "♨️", "🖨️", "🦶", "⚡", "✨", "🛠️", "🏥", "💉", "📡"];
+
+  container.innerHTML = `
+    <div style="margin-bottom: 1rem;">
+      <button class="btn btn-light" onclick="${isEdit ? `openEquipo('${existingEq.id}')` : 'goHome()'}">← Cancelar y Volver</button>
+    </div>
+
+    <div class="panel">
+      <h3>${isEdit ? `✏️ Editar Máquina (${existingEq.id})` : '➕ Añadir Nueva Máquina al Inventario'}</h3>
+      <p class="sub">Completa los datos técnicos del aparato. Al guardar, se creará automáticamente su ficha técnica, su código QR, su checklist de 12 puntos, su visor 3D y su diario de intervenciones.</p>
+
+      <div class="log-form" style="margin-bottom:0;">
+        <div class="form-grid">
+          <div class="form-field">
+            <label>ID / Código QR del Equipo *</label>
+            <input type="text" id="eqFormId" value="${nextId}" ${isEdit ? 'readonly style="background:#e2e8f0;"' : ''} placeholder="Ej: EQ-13" />
+          </div>
+          <div class="form-field">
+            <label>Familia Funcional *</label>
+            <input type="text" id="eqFormFamilia" list="familiaOptions" value="${isEdit ? existingEq.familia : 'UCI y Soporte Vital'}" placeholder="Selecciona o escribe una familia..." />
+            <datalist id="familiaOptions">
+              ${families.map(f => `<option value="${f}"></option>`).join('')}
+            </datalist>
+          </div>
+          <div class="form-field">
+            <label>Icono Representativo</label>
+            <select id="eqFormIcono">
+              ${icons.map(ic => `<option value="${ic}" ${(isEdit && existingEq.icono===ic)?'selected':''}>${ic}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Nombre / Tipo de Máquina *</label>
+            <input type="text" id="eqFormNombre" value="${isEdit ? existingEq.nombre : ''}" placeholder="Ej: Desfibrilador / Bomba de Infusión" />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Marca *</label>
+            <input type="text" id="eqFormMarca" value="${isEdit ? existingEq.marca : ''}" placeholder="Ej: Mindray / Nihon Kohden / Philips" />
+          </div>
+          <div class="form-field">
+            <label>Modelo / Referencia *</label>
+            <input type="text" id="eqFormModelo" value="${isEdit ? existingEq.modelo : ''}" placeholder="Ej: BeneHeart D3" />
+          </div>
+          <div class="form-field">
+            <label>Nº de Serie (S/N) o Inventario</label>
+            <input type="text" id="eqFormSn" value="${isEdit ? existingEq.sn : ''}" placeholder="Ej: SN-948201 / No visible" />
+          </div>
+          <div class="form-field">
+            <label>Año de Fabricación</label>
+            <input type="text" id="eqFormAnio" value="${isEdit ? existingEq.anio : ''}" placeholder="Ej: 2019 / No visible" />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Tensión Nominal</label>
+            <input type="text" id="eqFormTension" value="${isEdit ? existingEq.tension : '100 - 240 V~ (50/60 Hz)'}" placeholder="Ej: 230 V~ (50 Hz)" />
+          </div>
+          <div class="form-field">
+            <label>Consumo / Potencia / Fusibles</label>
+            <input type="text" id="eqFormConsumo" value="${isEdit ? existingEq.consumo : ''}" placeholder="Ej: 150 VA / 2.5 A" />
+          </div>
+          <div class="form-field">
+            <label>Servicio Técnico Oficial (SAT)</label>
+            <input type="text" id="eqFormSat" value="${isEdit ? existingEq.sat : ''}" placeholder="Ej: Fabricante / Servicio Técnico Oficial" />
+          </div>
+          <div class="form-field">
+            <label>Ruta del Modelo 3D (.html o .glb)</label>
+            <input type="text" id="eqFormModelo3d" value="${isEdit ? existingEq.modelo3d : `models/${nextId}.html`}" placeholder="Ej: models/${nextId}.html" />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Estado en Catálogo</label>
+            <select id="eqFormCatalogo">
+              ${["En vigor / Activo", "Descatalogado", "En vigor / Accesorio"].map(c => `<option value="${c}" ${(isEdit && existingEq.estado_catalogo===c)?'selected':''}>${c}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Modelo Actual / Equivalente</label>
+            <input type="text" id="eqFormEquivalente" value="${isEdit ? existingEq.equivalente : ''}" placeholder="Ej: Modelo equivalente actual" />
+          </div>
+          <div class="form-field">
+            <label>Título del Manual de Usuario / Servicio</label>
+            <input type="text" id="eqFormManualTitulo" value="${isEdit ? existingEq.manual_titulo : ''}" placeholder="Ej: Service & Operator Manual PDF" />
+          </div>
+          <div class="form-field">
+            <label>Ruta Foto Inicial (o subir después en su galería)</label>
+            <input type="text" id="eqFormFoto" value="${isEdit && existingEq.imagenes && existingEq.imagenes[0] ? existingEq.imagenes[0] : `fotos/${nextId}.jpg`}" placeholder="Ej: fotos/${nextId}.jpg" />
+          </div>
+        </div>
+
+        <div class="form-field" style="margin-bottom: 1rem;">
+          <label>Descripción Funcional del Equipo</label>
+          <textarea id="eqFormDesc" rows="3" placeholder="Explica brevemente qué hace este equipo y su aplicación clínica...">${isEdit ? existingEq.descripcion : ''}</textarea>
+        </div>
+
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+          <button class="btn btn-success" onclick="saveEquipoForm(${isEdit ? 'true' : 'false'})">💾 ${isEdit ? 'Guardar Cambios en la Máquina' : 'Crear Máquina y Generar Ficha QR'}</button>
+          <button class="btn btn-light" onclick="${isEdit ? `openEquipo('${existingEq.id}')` : 'goHome()'}">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveEquipoForm(isEdit) {
+  const rawId = document.getElementById("eqFormId").value.trim().toUpperCase();
+  const nombre = document.getElementById("eqFormNombre").value.trim();
+  const marca = document.getElementById("eqFormMarca").value.trim();
+  const modelo = document.getElementById("eqFormModelo").value.trim();
+
+  if (!rawId || !nombre || !marca || !modelo) {
+    alert("Por favor, rellena al menos el ID (ej. EQ-13), el Nombre de la máquina, la Marca y el Modelo.");
+    return;
+  }
+
+  if (!isEdit && appState.equipos[rawId]) {
+    alert("Ya existe un equipo con el código " + rawId + ". Usa otro código (por ejemplo " + getNextEqId() + ").");
+    return;
+  }
+
+  const familia = document.getElementById("eqFormFamilia").value.trim() || "General";
+  const icono = document.getElementById("eqFormIcono").value || "🛠️";
+  const sn = document.getElementById("eqFormSn").value.trim() || "No visible";
+  const anio = document.getElementById("eqFormAnio").value.trim() || "No visible";
+  const tension = document.getElementById("eqFormTension").value.trim() || "230 V~";
+  const consumo = document.getElementById("eqFormConsumo").value.trim() || "No visible";
+  const sat = document.getElementById("eqFormSat").value.trim() || marca;
+  const modelo3d = document.getElementById("eqFormModelo3d").value.trim() || `models/${rawId}.html`;
+  const estado_catalogo = document.getElementById("eqFormCatalogo").value;
+  const equivalente = document.getElementById("eqFormEquivalente").value.trim() || `${marca} ${modelo}`;
+  const manual_titulo = document.getElementById("eqFormManualTitulo").value.trim() || `${marca} ${modelo} User & Service Manual`;
+  const fotoInicial = document.getElementById("eqFormFoto").value.trim();
+  const descripcion = document.getElementById("eqFormDesc").value.trim() || `${nombre} ${marca} ${modelo}.`;
+
+  if (isEdit) {
+    const eq = appState.equipos[rawId];
+    eq.familia = familia;
+    eq.icono = icono;
+    eq.nombre = nombre;
+    eq.marca = marca;
+    eq.modelo = modelo;
+    eq.sn = sn;
+    eq.anio = anio;
+    eq.tension = tension;
+    eq.consumo = consumo;
+    eq.sat = sat;
+    eq.modelo3d = modelo3d;
+    eq.estado_catalogo = estado_catalogo;
+    eq.equivalente = equivalente;
+    eq.manual_titulo = manual_titulo;
+    eq.manual_query = `${marca} ${modelo} manual PDF`;
+    eq.descripcion = descripcion;
+  } else {
+    const imagenesArr = fotoInicial ? [fotoInicial] : [];
+    appState.equipos[rawId] = {
+      id: rawId,
+      familia,
+      icono,
+      nombre,
+      marca,
+      modelo,
+      sn,
+      anio,
+      tension,
+      consumo,
+      sat,
+      estado_catalogo,
+      equivalente,
+      manual_titulo,
+      manual_query: `${marca} ${modelo} manual PDF`,
+      imagenes: imagenesArr,
+      modelo3d,
+      descripcion,
+      grupoAsignado: "",
+      estadoGlobal: "Pendiente de Diagnóstico",
+      urlManualDrive: "",
+      galeria: imagenesArr.map(img => ({
+        url: img,
+        titulo: "Foto inicial (" + img.replace("fotos/", "") + ")",
+        fecha: new Date().toISOString().slice(0,10)
+      })),
+      despiece: [
+        { id: 1, subsistema: "Panel de control e interfaz de usuario", funcion: "Pantalla, indicadores visuales, interruptores y controles de operación frontal.", estado: "Pendiente", ref: "", foto: fotoInicial || "", obs: "" },
+        { id: 2, subsistema: "Fuente de alimentación y protecciones", funcion: "Entrada de red eléctrica, portafusibles, transformador/fuente conmutada y toma de tierra.", estado: "Pendiente", ref: "", foto: "", obs: "" },
+        { id: 3, subsistema: "Módulo funcional principal / Actuadores", funcion: "Bloque principal de trabajo del equipo (sensores, motor, lámpara, cámara o generador).", estado: "Pendiente", ref: "", foto: "", obs: "" },
+        { id: 4, subsistema: "Chasis, carcasa y conectores externos", funcion: "Estructura envolvente, soportes, tomas de paciente/accesorios y ventilación.", estado: "Pendiente", ref: "", foto: "", obs: "" }
+      ],
+      checklist: BASE_CHECKLIST.map(item => ({
+        ...item,
+        resultado: "Pendiente",
+        prioridad: "Media",
+        responsable: "",
+        hallazgos: ""
+      })),
+      diario: [
+        {
+          fecha: new Date().toISOString().slice(0,10),
+          grupo: "Alta en Plataforma",
+          tipo: "Diagnóstico Inicial",
+          sintoma: "Equipo dado de alta desde la plataforma web.",
+          acciones: "Creación de ficha técnica, asignación de código QR y preparación de checklist.",
+          repuestos: "Ninguno",
+          estadoFinal: "Pendiente de pruebas"
+        }
+      ]
+    };
+  }
+
+  saveState();
+  openEquipo(rawId, "despiece");
+}
+
+function deleteEquipo(eqId) {
+  if (!confirm(`¿Seguro que deseas eliminar la máquina ${eqId} del inventario?`)) return;
+  delete appState.equipos[eqId];
+  saveState();
+  goHome();
+}
+
+function addDespieceRow(eqId) {
+  const list = appState.equipos[eqId].despiece;
+  const nextId = list.length + 1;
+  list.push({
+    id: nextId,
+    subsistema: "Nuevo componente / subsistema",
+    funcion: "Descripción de la función del componente...",
+    estado: "Pendiente",
+    ref: "",
+    foto: "",
+    obs: ""
+  });
+  saveState();
+  render();
+}
+
+function deleteDespieceRow(eqId, idx) {
+  appState.equipos[eqId].despiece.splice(idx, 1);
+  saveState();
+  render();
+}
+
+function downloadUpdatedHtml() {
+  // Exporta el archivo index.html limpio con todas las máquinas y datos actuales incrustados para subir a GitHub
+  const appEl = document.getElementById("app");
+  const prevAppHtml = appEl.innerHTML;
+  appEl.innerHTML = "";
+  let docHtml = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  appEl.innerHTML = prevAppHtml;
+
+  const currentEquiposArray = Object.values(appState.equipos);
+  docHtml = docHtml.replace(
+    /const INITIAL_EQUIPOS = \[.*?\];/s,
+    "const INITIAL_EQUIPOS = " + JSON.stringify(currentEquiposArray) + ";"
+  );
+  const blob = new Blob([docHtml], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "index.html";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 render();
