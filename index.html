@@ -166,8 +166,112 @@
       transition: transform 0.15s, box-shadow 0.15s;
     }
     .card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+      transform: translateY(-4px);
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+    }
+    /* Escenario Multimedia en la Tarjeta Inicial (Imagen + Cambio a 3D al pasar el cursor) */
+    .card-media-stage {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+      display: none;
+    }
+    .card-media-stage.has-valid-img {
+      display: block;
+    }
+    .card-media-img-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      transition: opacity 0.4s ease, transform 0.5s ease;
+      background: #0f172a;
+    }
+    .card-media-img-layer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+    .card:not(.has-both-media):hover .card-media-img-layer img {
+      transform: scale(1.05);
+    }
+    .card-media-3d-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%);
+    }
+    .card-media-3d-layer iframe,
+    .card-media-3d-layer model-viewer {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    .card.has-both-media .card-media-stage.show-3d .card-media-img-layer {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .card.has-both-media .card-media-stage.show-3d .card-media-3d-layer {
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 3;
+      box-shadow: inset 0 0 25px rgba(37, 99, 235, 0.45);
+    }
+    .card-media-badge {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      z-index: 5;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(6px);
+      color: #fff;
+      font-size: 0.73rem;
+      font-weight: 700;
+      padding: 0.3rem 0.7rem;
+      border-radius: 99px;
+      border: 1px solid rgba(96, 165, 250, 0.65);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+    .card.has-both-media .card-media-stage.show-3d .card-media-badge {
+      background: rgba(37, 99, 235, 0.92);
+      border-color: #93c5fd;
+    }
+    /* Toast Notification */
+    .toast-notice {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      color: #fff;
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      border-left: 5px solid var(--ok);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      font-size: 0.88rem;
+      font-weight: 600;
+      z-index: 2000;
+      opacity: 0;
+      transform: translateY(15px);
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+    .toast-notice.show {
+      opacity: 1;
+      transform: translateY(0);
     }
     .card-header {
       padding: 0.9rem 1.2rem;
@@ -552,23 +656,84 @@
   </div>
 </div>
 
+<div id="toastNotice" class="toast-notice">✅ Guardado correctamente</div>
+
 <script>
-const INITIAL_EQUIPOS = [{"id": "EQ-01", "familia": "UCI y Soporte Vital", "icono": "🫁", "nombre": "Ventilador Mecánico (Respirador)", "marca": "Dräger", "modelo": "Evita 2 dura (SW 3.00)", "sn": "Inv: #32207 / 680-E-00005 (quirónsalud)", "anio": "No visible", "tension": "100 - 240 VAC (50/60 Hz)", "consumo": "3.2 - 1.2 A (Fusibles F1, F2: T 5H 250V)", "sat": "Dräger Medical", "estado_catalogo": "Descatalogado", "equivalente": "Dräger Evita 4 / Dräger Evita V300", "manual_titulo": "Dräger Evita 2 dura Instructions for Use SW 3.00 / Service Manual", "manual_query": "Drager Evita 2 dura Instructions for Use SW 3.00 PDF", "imagenes": ["fotos/35735.jpg", "fotos/35736.jpg", "fotos/35737.jpg", "fotos/35738.jpg"], "modelo3d": "models/EQ-01.html", "descripcion": "Dispositivo de soporte vital respiratorio para UCI. Permite programar modos ventilatorios (IPPV, SIMV, BIPAP) y controlar volumen tidal (VT), presión (PEEP), flujo y FiO2.", "despiece": [{"id": 1, "subsistema": "Bloque neumático / Tomas de gas", "funcion": "Entradas traseras presurizadas de Aire y O2 (2.7 a 6 bar / 40 a 87 psi) con filtros.", "estado": "Pendiente", "ref": "", "foto": "fotos/35735.jpg", "obs": ""}, {"id": 2, "subsistema": "Válvula espiratoria y bloque paciente", "funcion": "Conexiones inferiores de inspiración y espiración con trampa de agua y sensores de flujo.", "estado": "Pendiente", "ref": "", "foto": "fotos/35738.jpg", "obs": ""}, {"id": 3, "subsistema": "Panel de control frontal y pantalla", "funcion": "Pantalla LCD, botones de modo (IPPV, SIMV, BIPAP), teclas de parámetros y mando rotatorio.", "estado": "Pendiente", "ref": "", "foto": "fotos/35737.jpg", "obs": ""}, {"id": 4, "subsistema": "Fuente de alimentación y ventilación", "funcion": "Módulo de potencia CA con ventilador extractor trasero y portafusibles (T 5H 250V).", "estado": "Pendiente", "ref": "", "foto": "fotos/35735.jpg", "obs": ""}, {"id": 5, "subsistema": "Tarjetas de interfaz y opciones", "funcion": "Puertos traseros COM1 RS232C, ILV, SpO2, Sync, CO2, Temp y conector Extensionbox.", "estado": "Pendiente", "ref": "8413795", "foto": "fotos/35736.jpg", "obs": "Opciones Capno Plus, Ventilation Plus, Monitoring Plus"}]}, {"id": "EQ-02", "familia": "UCI y Soporte Vital", "icono": "❤️", "nombre": "Monitor de Signos Vitales", "marca": "Philips", "modelo": "SureSigns VS3 (REF 863071)", "sn": "CN75107223", "anio": "2008 (2008-01)", "tension": "100 - 240 V~ (50/60 Hz)", "consumo": "120 VA (Fusible T 1.6A 250V)", "sat": "Philips Medical Systems", "estado_catalogo": "Descatalogado", "equivalente": "Philips SureSigns VS4 / Philips EarlyVue VS30", "manual_titulo": "Philips SureSigns VS3 Guía de uso (Ref. 453564130541) / Service Manual (Ref. 453564106461)", "manual_query": "Philips SureSigns VS3 Service Manual 453564106461 PDF", "imagenes": ["fotos/35739.jpg", "fotos/35740.jpg", "fotos/35741.jpg", "fotos/35762.jpg"], "modelo3d": "models/EQ-02.html", "descripcion": "Monitor portátil para supervisión fisiológica en tiempo real de presión arterial no invasiva (PANI) y saturación de oxígeno en sangre (SpO2).", "despiece": [{"id": 1, "subsistema": "Pantalla y botonera frontal", "funcion": "Display LCD color, rueda de navegación naranja, botones de alarma, PANI, impresión y encendido.", "estado": "Pendiente", "ref": "", "foto": "fotos/35739.jpg", "obs": ""}, {"id": 2, "subsistema": "Módulo lateral de adquisición", "funcion": "Conector azul de 8 pines para SpO2 y conector circular rojo para manguera de PANI.", "estado": "Pendiente", "ref": "", "foto": "fotos/35741.jpg", "obs": ""}, {"id": 3, "subsistema": "Bomba neumática interna PANI", "funcion": "Compresor interno, transductor de presión y electroválvulas para inflado del manguito.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}, {"id": 4, "subsistema": "Placa de comunicaciones y energía", "funcion": "Entrada IEC con abrazadera, toma equipotencial, puerto USB y puerto Ethernet RJ45 (LAN).", "estado": "Pendiente", "ref": "863071", "foto": "fotos/35740.jpg", "obs": ""}, {"id": 5, "subsistema": "Accesorios externos de paciente", "funcion": "Manguito adulto Riester con tubo gris, sensor de pinza SpO2 y cable de alimentación.", "estado": "Pendiente", "ref": "", "foto": "fotos/35762.jpg", "obs": ""}]}, {"id": "EQ-03", "familia": "Equipamiento Dental", "icono": "🦷", "nombre": "Compresor de Aire Dental", "marca": "Dürr Dental", "modelo": "Typ 5210 (Depósito Silit-Werke)", "sn": "Motor: 46544 | Depósito: 393509", "anio": "1986", "tension": "220 V~ (50 Hz)", "consumo": "1550 W / 8.7 A (100% ED)", "sat": "Dürr Dental", "estado_catalogo": "Descatalogado", "equivalente": "Dürr Dental Tornado 1 / Dürr Dental Duo", "manual_titulo": "Dürr Dental Tornado 1 / Duo Manual de instalación y uso (Equivalente a Typ 5210)", "manual_query": "Durr Dental Tornado 1 manual instalacion uso PDF", "imagenes": ["fotos/35742.jpg", "fotos/35743.jpg", "fotos/35744.jpg"], "modelo3d": "models/EQ-03.html", "descripcion": "Compresor odontológico sin aceite que genera y almacena aire comprimido seco e higiénico (20 L a 7 bar) para accionar turbinas, micromotores y jeringas del sillón dental.", "despiece": [{"id": 1, "subsistema": "Cabezal compresor bicilíndrico", "funcion": "Bloque de cilindros con aletas de refrigeración de aluminio y pistones secos (sin aceite).", "estado": "Pendiente", "ref": "Typ 5210", "foto": "fotos/35743.jpg", "obs": ""}, {"id": 2, "subsistema": "Motor eléctrico monofásico", "funcion": "Motor de inducción de 1550 W (220 V, 8.7 A) acoplado al bloque con caja de bornes superior.", "estado": "Pendiente", "ref": "Nr. 46544", "foto": "fotos/35742.jpg", "obs": ""}, {"id": 3, "subsistema": "Calderín / Depósito de presión", "funcion": "Tanque azul de 20 Litros (presión máx. trabajo 7 bar), fabricado por Silit-Werke en 1986.", "estado": "Pendiente", "ref": "393509", "foto": "fotos/35744.jpg", "obs": ""}, {"id": 4, "subsistema": "Presostato y válvulas de seguridad", "funcion": "Caja de maniobra de arranque/parada por presión, latiguillo metálico y válvula de purga.", "estado": "Pendiente", "ref": "", "foto": "fotos/35743.jpg", "obs": ""}, {"id": 5, "subsistema": "Sistema de admisión y filtrado", "funcion": "Filtro de aspiración de aire superior y conductos neumáticos de salida.", "estado": "Pendiente", "ref": "", "foto": "fotos/35743.jpg", "obs": ""}]}, {"id": "EQ-04", "familia": "Equipamiento Dental", "icono": "🦷", "nombre": "Sistema de Aspiración Dental", "marca": "Cattani", "modelo": "Turbo SMART 2V (Cód. 035135)", "sn": "Chasis: WP229285 | Soplante: LF187700 | Sep: XD390034", "anio": "2018 (04/2018)", "tension": "230 V~ (1~ 50-60 Hz)", "consumo": "9 A (Soplante 1.5 kW + Separador 1.0 kW)", "sat": "Cattani S.p.A.", "estado_catalogo": "En vigor / Activo", "equivalente": "Cattani Turbo SMART A / B (Modelo actual)", "manual_titulo": "Manual de uso y mantenimiento Cattani Turbo SMART (Cód. 035135)", "manual_query": "Cattani Turbo SMART 035135 manual PDF", "imagenes": ["fotos/35745.jpg", "fotos/35746.jpg", "fotos/35747.jpg", "fotos/35748.jpg"], "modelo3d": "models/EQ-04.html", "descripcion": "Unidad de aspiración quirúrgica dental en húmedo con variador electrónico de frecuencia (Inverter) y separador centrífugo integrado para aislar líquidos y sólidos.", "despiece": [{"id": 1, "subsistema": "Motor soplante de succión (Inferior)", "funcion": "Motor trifásico Uni Jet 75 2V (1.5 kW, 4800 rpm) generador de vacío y escape de aire.", "estado": "Pendiente", "ref": "Cod. 019164", "foto": "fotos/35748.jpg", "obs": "S/N LF187700"}, {"id": 2, "subsistema": "Motor separador centrífugo (Superior)", "funcion": "Motor asíncrono compacto (1.0 kW, 2750 rpm) para separar fluidos/espuma del flujo de aire.", "estado": "Pendiente", "ref": "Cod. 025400", "foto": "fotos/35747.jpg", "obs": "S/N XD390034"}, {"id": 3, "subsistema": "Cuadro electrónico e Inverter", "funcion": "Torreta lateral con pantalla LCD 'Turbo SMART', teclado de membrana, ranura MicroSD e interruptor.", "estado": "Pendiente", "ref": "Cod. 035135", "foto": "fotos/35745.jpg", "obs": ""}, {"id": 4, "subsistema": "Colector de entrada y desagüe", "funcion": "Tubo de admisión con tapón amarillo de acceso, racores hidráulicos y drenaje de residuos.", "estado": "Pendiente", "ref": "", "foto": "fotos/35745.jpg", "obs": ""}, {"id": 5, "subsistema": "Chasis y tobera de escape", "funcion": "Bancada metálica blanca con silentblocks de goma y salida de aire caliente (Ejected Air Outlet).", "estado": "Pendiente", "ref": "", "foto": "fotos/35746.jpg", "obs": "Precaución: superficie muy caliente"}]}, {"id": "EQ-05", "familia": "Endoscopia e Imagen Médica", "icono": "🔬", "nombre": "Procesador de Cámara Endoscópica (CCU)", "marca": "Karl Storz", "modelo": "Dx-cam pal (Ref. 20230020)", "sn": "No visible en carcasa", "anio": "No visible", "tension": "100 - 240 V~ (Fusible T0.4A 250V)", "consumo": "No visible", "sat": "Karl Storz Endoskope", "estado_catalogo": "Descatalogado", "equivalente": "Karl Storz Telecam DX II (20232020) / Telecam SL pal", "manual_titulo": "Karl Storz Dx-cam 20230020 Manual / Telecam DX II Instruction Manual", "manual_query": "Karl Storz 20230020 Telecam DX manual PDF", "imagenes": ["fotos/35749.jpg", "fotos/35750.jpg"], "modelo3d": "models/EQ-05.html", "descripcion": "Unidad de control de cámara (CCU) que procesa la señal captada por el cabezal del endoscopio y la convierte en vídeo analógico PAL para monitores quirúrgicos.", "despiece": [{"id": 1, "subsistema": "Conector frontal de cámara", "funcion": "Receptáculo multipin rectangular en el panel derecho para conectar el cabezal de cámara.", "estado": "Pendiente", "ref": "20230020", "foto": "fotos/35749.jpg", "obs": ""}, {"id": 2, "subsistema": "Controles de operación frontales", "funcion": "Interruptor general basculante verde (I/O) y pulsador negro de balance de blancos.", "estado": "Pendiente", "ref": "", "foto": "fotos/35749.jpg", "obs": ""}, {"id": 3, "subsistema": "Etapa de salidas de vídeo (Trasera)", "funcion": "1 conector BNC de vídeo compuesto (COMP VIDEO) y 2 puertos Mini-DIN de 4 pines (S-VIDEO).", "estado": "Pendiente", "ref": "", "foto": "fotos/35750.jpg", "obs": ""}, {"id": 4, "subsistema": "Puerto de teclado (Keyboard In)", "funcion": "Conector DIN de 5 pines trasero para conectar teclado e insertar datos del paciente.", "estado": "Pendiente", "ref": "", "foto": "fotos/35750.jpg", "obs": ""}, {"id": 5, "subsistema": "Fuente de alimentación y seguridad", "funcion": "Toma IEC con portafusibles integrado (T0.4A 250V) y borne equipotencial de tierra.", "estado": "Pendiente", "ref": "", "foto": "fotos/35750.jpg", "obs": "Made in U.S.A."}]}, {"id": "EQ-06", "familia": "Endoscopia e Imagen Médica", "icono": "💡", "nombre": "Fuente de Luz Endoscópica", "marca": "COMEG Endoskopie", "modelo": "HALOGEN (Ref. CH 250/41)", "sn": "41068", "anio": "1998 (Código 9801)", "tension": "115 - 230 VAC (50/60 Hz)", "consumo": "330 W / 1.6 A (Fusibles 2xT 2.5A)", "sat": "COMEG Endoskopie (Grupo Acteon / Sopro-Comeg)", "estado_catalogo": "Descatalogado", "equivalente": "Karl Storz Cold Light Fountain Halogen 250 Twin (20113320)", "manual_titulo": "COMEG CH 250/41 Manual / Equivalente Karl Storz Halogen 250 Twin User Manual", "manual_query": "Karl Storz Halogen 250 Twin user manual PDF", "imagenes": ["fotos/35751.jpg", "fotos/35752.jpg"], "modelo3d": "models/EQ-06.html", "descripcion": "Fuente de luz fría halógena de 330 W que transmite iluminación de alta intensidad mediante un cable de fibra óptica hacia el endoscopio durante exploraciones médicas.", "despiece": [{"id": 1, "subsistema": "Torreta de conexión óptica", "funcion": "Receptáculo cilíndrico metálico frontal para acoplar el cable de fibra óptica.", "estado": "Pendiente", "ref": "", "foto": "fotos/35751.jpg", "obs": ""}, {"id": 2, "subsistema": "Panel de control frontal", "funcion": "Interruptor verde (Power 1/0), testigo rojo de lámpara y botones amarillos (Intensity).", "estado": "Pendiente", "ref": "", "foto": "fotos/35751.jpg", "obs": ""}, {"id": 3, "subsistema": "Compartimento de lámpara halógena", "funcion": "Portalámparas cerámico interno de alta temperatura, reflector dicroico y lámpara.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}, {"id": 4, "subsistema": "Sistema de refrigeración forzada", "funcion": "Ventilador axial interno y rejillas de ventilación para disipar los 330 W.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}, {"id": 5, "subsistema": "Módulo eléctrico trasero", "funcion": "Selector de tensión (230V), portafusibles doble (2xT 2.5A), toma IEC y borne equipotencial.", "estado": "Pendiente", "ref": "CH 250/41", "foto": "fotos/35752.jpg", "obs": "Clase CF, Made in Germany"}]}, {"id": "EQ-07", "familia": "Esterilización y Desinfección", "icono": "♨️", "nombre": "Autoclave de Vapor (1)", "marca": "Tuttnauer", "modelo": "Elara9-W-D", "sn": "16010874", "anio": "2018", "tension": "230 V~ (50 Hz)", "consumo": "10 A", "sat": "Tuttnauer", "estado_catalogo": "En vigor / Activo", "equivalente": "Tuttnauer Elara 9D / Elara 11D", "manual_titulo": "Tuttnauer Elara 9D / Elara 11D Operation & Maintenance Manual / Service Manual", "manual_query": "Tuttnauer Elara 9D user service manual PDF", "imagenes": ["fotos/image_75546b.jpg", "fotos/image_755506.jpg"], "modelo3d": "models/EQ-07.html", "descripcion": "Esterilizador de vapor de sobremesa (Autoclave Clase B) con cámara de acero inoxidable de 19.8 litros, bomba de vacío e impresora térmica de ciclos integrada.", "despiece": [{"id": 1, "subsistema": "Cámara de esterilización y puerta", "funcion": "Cámara de 19.8 L (presión máx. 2.8 bar, prueba 4.1 bar), puerta con bloqueo y junta.", "estado": "Pendiente", "ref": "ELARA9-W-D", "foto": "fotos/image_75546b.jpg", "obs": ""}, {"id": 2, "subsistema": "Panel de control y pantalla digital", "funcion": "Display frontal superior derecho y botonera circular (Up, Down, Start/Stop).", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755506.jpg", "obs": ""}, {"id": 3, "subsistema": "Impresora térmica integrada", "funcion": "Módulo impresor frontal inferior para emisión de tickets de trazabilidad de cada ciclo.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755506.jpg", "obs": ""}, {"id": 4, "subsistema": "Sistema hidráulico y drenajes", "funcion": "Reservorios internos y tomas inferiores de vaciado (Waste Water Drain / Clean Water Drain).", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755506.jpg", "obs": ""}, {"id": 5, "subsistema": "Generador de vapor y bomba de vacío", "funcion": "Resistencias calefactoras, electroválvulas, transductores y bomba de vacío fraccionado.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}]}, {"id": "EQ-08", "familia": "Esterilización y Desinfección", "icono": "♨️", "nombre": "Autoclave de Vapor (2)", "marca": "Tuttnauer", "modelo": "2540EKA", "sn": "2407110 (Inv. Gob. Canarias: 99016)", "anio": "2004", "tension": "230 V~ (50/60 Hz, 1 Ph)", "consumo": "9.6 A", "sat": "Tuttnauer", "estado_catalogo": "Descatalogado", "equivalente": "Tuttnauer 2540E / 2540EA / Serie M-EKA", "manual_titulo": "Tuttnauer 1730 / 2340 / 2540 / 3870 E / EK / EKA Operator & Service Manual", "manual_query": "Tuttnauer 2540EKA service manual PDF", "imagenes": ["fotos/image_755542.jpg", "fotos/image_7557e8.jpg"], "modelo3d": "models/EQ-08.html", "descripcion": "Autoclave automático de vapor con cámara de 23 litros, cierre mecánico radial mediante volante frontal, manómetro analógico de presión e impresora de panel.", "despiece": [{"id": 1, "subsistema": "Cámara de presión y cierre radial", "funcion": "Cámara de 23 L (máx. 2.76 bar, prueba 4.30 bar) con volante de cierre mecánico izquierdo.", "estado": "Pendiente", "ref": "2540EKA", "foto": "fotos/image_755542.jpg", "obs": ""}, {"id": 2, "subsistema": "Manómetro analógico y display", "funcion": "Manómetro en puerta frontal, pantalla LCD alfanumérica y botonera vertical de control.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755542.jpg", "obs": ""}, {"id": 3, "subsistema": "Impresora de panel y puerto serie", "funcion": "Impresora frontal derecha, puerto de datos DB9 (RS-232) e interruptor general luminoso rojo.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755542.jpg", "obs": ""}, {"id": 4, "subsistema": "Depósito superior y válvulas", "funcion": "Acceso superior al depósito de agua destilada, válvula de seguridad certificada y termostato.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_7557e8.jpg", "obs": ""}, {"id": 5, "subsistema": "Elementos calefactores y tarjeta EKA", "funcion": "Resistencias abrazaderas de cámara, sondas PT100 y placa electrónica de control.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}]}, {"id": "EQ-09", "familia": "Endoscopia e Imagen Médica", "icono": "🖨️", "nombre": "Impresora de Vídeo Médico", "marca": "Mitsubishi", "modelo": "CP900 (Video Copy Processor)", "sn": "No visible en tomas frontales/superiores", "anio": "No visible", "tension": "100 - 240 V~ (50/60 Hz)", "consumo": "No visible", "sat": "Mitsubishi Electric", "estado_catalogo": "Descatalogado", "equivalente": "Mitsubishi CP900E / CP30DW / Sony UP-25MD", "manual_titulo": "Mitsubishi CP900E / CP900U Video Copy Processor User & Service Manual", "manual_query": "Mitsubishi CP900E Video Copy Processor service manual PDF", "imagenes": ["fotos/image_75580b.jpg", "fotos/image_75580f.jpg", "fotos/image_75582c.jpg"], "modelo3d": "models/EQ-09.html", "descripcion": "Procesador e impresora térmica por sublimación de tinta a color para capturar e imprimir fotogramas desde sistemas de endoscopia, ecografía o microscopía quirúrgica.", "despiece": [{"id": 1, "subsistema": "Panel frontal de operación", "funcion": "Interruptor Power, display LCD, botones Menu/+/-, Monitor, Memory (Feed&Cut) y Print.", "estado": "Pendiente", "ref": "CP900", "foto": "fotos/image_75580b.jpg", "obs": ""}, {"id": 2, "subsistema": "Bandeja de papel y casete de tinta", "funcion": "Compartimento frontal abatible (botón Open) para rollo de papel y cinta de color.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_75580b.jpg", "obs": ""}, {"id": 3, "subsistema": "Cabezal térmico y cuchilla de corte", "funcion": "Cabezal térmico de sublimación y guillotina automática interna (función Feed & Cut).", "estado": "Pendiente", "ref": "", "foto": "fotos/image_75580f.jpg", "obs": "Requiere Media Initialization al cambiar rollo"}, {"id": 4, "subsistema": "Conectores de vídeo y control remoto", "funcion": "Entrada frontal 'Remote' para pedal/disparador y conectores traseros BNC y S-Video.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_75582c.jpg", "obs": ""}, {"id": 5, "subsistema": "Fuente de alimentación interna", "funcion": "Módulo de potencia conmutado y chasis metálico blindado.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_75582c.jpg", "obs": ""}]}, {"id": "EQ-10", "familia": "Equipamiento Dental", "icono": "🦶", "nombre": "Pedal de Control Dental", "marca": "KaVo (DSE) / Komo", "modelo": "Pedal de Control DSE Expert", "sn": "No visible", "anio": "No visible", "tension": "N/A (Control pasivo de baja tensión)", "consumo": "N/A", "sat": "KaVo Dental / Komo", "estado_catalogo": "En vigor / Accesorio", "equivalente": "KaVo DSE Expert Foot Control", "manual_titulo": "KaVo DSE Expert (Dental Simulation Unit) User & Installation Manual", "manual_query": "KaVo DSE Expert simulation unit manual PDF", "imagenes": ["fotos/image_755866.jpg", "fotos/image_755883.jpg"], "modelo3d": "models/EQ-10.html", "descripcion": "Pedal de accionamiento eléctrico/electrónico para unidades de simulación odontológica (DSE), utilizado para activar y regular el instrumental rotatorio con el pie.", "despiece": [{"id": 1, "subsistema": "Pedal pulsador basculante", "funcion": "Pedal gris antideslizante marca Komo para regulación o activación de instrumentos.", "estado": "Pendiente", "ref": "Komo", "foto": "fotos/image_755866.jpg", "obs": ""}, {"id": 2, "subsistema": "Carcasa protectora superior", "funcion": "Arco metálico negro/blanco con serigrafía DSE para protección y reposicionamiento.", "estado": "Pendiente", "ref": "DSE", "foto": "fotos/image_755866.jpg", "obs": ""}, {"id": 3, "subsistema": "Base metálica de apoyo", "funcion": "Plancha inferior negra con fijaciones mecánicas y topes de apoyo en suelo.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755883.jpg", "obs": ""}, {"id": 4, "subsistema": "Manguera y conector multipin", "funcion": "Cable flexible gris con prensaestopas y conector circular metálico roscado multiclavija.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755883.jpg", "obs": ""}, {"id": 5, "subsistema": "Transductor / Microinterruptor interno", "funcion": "Mecanismo interno de conmutación o potenciómetro bajo el pedal basculante.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}]}, {"id": "EQ-11", "familia": "Dermoestética y Electroterapia", "icono": "⚡", "nombre": "Monitor / Transmisor Remoto Cardíaco", "marca": "Medtronic", "modelo": "MyCareLink Patient Monitor (Mod. 24952)", "sn": "BTL539047E (Radio Ref: 24950B)", "anio": "2024 (2024-10)", "tension": "5 V DC (Adaptador externo)", "consumo": "3.0 A (Módem USB 5V / 400mA)", "sat": "Medtronic, Inc. / Medtronic B.V.", "estado_catalogo": "En vigor / Activo", "equivalente": "Medtronic MyCareLink 24952 / MyCareLink Heart", "manual_titulo": "Medtronic MyCareLink Patient Monitor 24952 Patient & Clinician Manual (M965132A004)", "manual_query": "Medtronic MyCareLink 24952 patient manual PDF", "imagenes": ["fotos/image_7558c2.jpg", "fotos/image_7558c5.jpg"], "modelo3d": "models/EQ-11.html", "descripcion": "Monitor domiciliario de telemedicina para pacientes con dispositivos cardíacos implantados (marcapasos o desfibriladores). Lee los datos por radiofrecuencia y los transmite por red móvil.", "despiece": [{"id": 1, "subsistema": "Lector de telemetría (Cabezal extraíble)", "funcion": "Antena lectora ovalada central que se coloca sobre el pecho para interrogar el implante.", "estado": "Pendiente", "ref": "24950B", "foto": "fotos/image_7558c2.jpg", "obs": ""}, {"id": 2, "subsistema": "Base con pantalla LCD y controles", "funcion": "Unidad base blanca/azul con pantalla gráfica de estado y botones de navegación.", "estado": "Pendiente", "ref": "24952", "foto": "fotos/image_7558c2.jpg", "obs": ""}, {"id": 3, "subsistema": "Módulo celular USB lateral", "funcion": "Módem USB celular 4G extraíble (Model K41VE) acoplado en el compartimento inferior.", "estado": "Pendiente", "ref": "K41VE", "foto": "fotos/image_7558c5.jpg", "obs": ""}, {"id": 4, "subsistema": "Etapa de alimentación DC", "funcion": "Entrada de corriente continua de 5V === 3.0A para fuente de alimentación externa.", "estado": "Pendiente", "ref": "M963336A010", "foto": "fotos/image_7558c5.jpg", "obs": "Grado protección IP21"}]}, {"id": "EQ-12", "familia": "Dermoestética y Electroterapia", "icono": "✨", "nombre": "Equipo de Radiofrecuencia Fraccionada", "marca": "Daeshin Enterprise (DSE)", "modelo": "DeAge EX (Ref. DS-40R)", "sn": "1507", "anio": "2012 (2012.10.25)", "tension": "220 - 230 VAC (50/60 Hz)", "consumo": "450 VA", "sat": "Daeshin Enterprise Co., Ltd / Quanta Service (Francia)", "estado_catalogo": "Descatalogado", "equivalente": "Daeshin DeAge EX / Secret RF", "manual_titulo": "Daeshin Enterprise DeAge EX (DS-40R) Operator's Manual", "manual_query": "Daeshin Enterprise DeAge EX DS-40R manual PDF", "imagenes": ["fotos/image_755ca2.jpg", "fotos/image_755ca7.jpg", "fotos/image_755cbf.jpg"], "modelo3d": "models/EQ-12.html", "descripcion": "Sistema médico-estético de radiofrecuencia fraccionada con microagujas. Permite regular profundidad de aguja (mm), nivel de potencia RF, tiempo de repetición y modos automáticos/manuales.", "despiece": [{"id": 1, "subsistema": "Pantalla táctil e interfaz de control", "funcion": "Display LCD táctil con ajuste de Needle Length (0.8 mm), Output Level, Repeat Time y memorias M1-M3.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755ca2.jpg", "obs": ""}, {"id": 2, "subsistema": "Generador interno de Radiofrecuencia", "funcion": "Módulo de potencia de RF de 450 VA con aislamiento de seguridad Clase I Tipo BF.", "estado": "Pendiente", "ref": "DS-40R", "foto": "fotos/image_755cbf.jpg", "obs": ""}, {"id": 3, "subsistema": "Manípulo (Handpiece) y soporte", "funcion": "Aplicador motorizado de inserción/extracción de cartuchos de microagujas.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755ca2.jpg", "obs": ""}, {"id": 4, "subsistema": "Panel eléctrico inferior trasero", "funcion": "Interruptor general luminoso verde (POWER), portafusibles (FUSE) y conector (FOOT SWITCH).", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755cbf.jpg", "obs": ""}, {"id": 5, "subsistema": "Chasis tipo torre con ruedas", "funcion": "Pedestal vertical blanco/negro sobre base rodante de 4 ruedas giratorias.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755ca7.jpg", "obs": "Peso: 20 kg"}]}];
+const INITIAL_EQUIPOS = [{"id": "EQ-01", "familia": "UCI y Soporte Vital", "icono": "🫁", "nombre": "Ventilador Mecánico (Respirador)", "marca": "Dräger", "modelo": "Evita 2 dura (SW 3.00)", "sn": "Inv: #32207 / 680-E-00005 (quirónsalud)", "anio": "No visible", "tension": "100 - 240 VAC (50/60 Hz)", "consumo": "3.2 - 1.2 A (Fusibles F1, F2: T 5H 250V)", "sat": "Dräger Medical", "estado_catalogo": "Descatalogado", "equivalente": "Dräger Evita 4 / Dräger Evita V300", "manual_titulo": "Dräger Evita 2 dura Instructions for Use SW 3.00 / Service Manual", "manual_query": "Drager Evita 2 dura Instructions for Use SW 3.00 PDF", "imagenes": ["fotos/35735.jpg", "fotos/35736.jpg", "fotos/35737.jpg", "fotos/35738.jpg"], "modelo3d": "", "descripcion": "Dispositivo de soporte vital respiratorio para UCI. Permite programar modos ventilatorios (IPPV, SIMV, BIPAP) y controlar volumen tidal (VT), presión (PEEP), flujo y FiO2.", "despiece": [{"id": 1, "subsistema": "Bloque neumático / Tomas de gas", "funcion": "Entradas traseras presurizadas de Aire y O2 (2.7 a 6 bar / 40 a 87 psi) con filtros.", "estado": "Pendiente", "ref": "", "foto": "fotos/35735.jpg", "obs": ""}, {"id": 2, "subsistema": "Válvula espiratoria y bloque paciente", "funcion": "Conexiones inferiores de inspiración y espiración con trampa de agua y sensores de flujo.", "estado": "Pendiente", "ref": "", "foto": "fotos/35738.jpg", "obs": ""}, {"id": 3, "subsistema": "Panel de control frontal y pantalla", "funcion": "Pantalla LCD, botones de modo (IPPV, SIMV, BIPAP), teclas de parámetros y mando rotatorio.", "estado": "Pendiente", "ref": "", "foto": "fotos/35737.jpg", "obs": ""}, {"id": 4, "subsistema": "Fuente de alimentación y ventilación", "funcion": "Módulo de potencia CA con ventilador extractor trasero y portafusibles (T 5H 250V).", "estado": "Pendiente", "ref": "", "foto": "fotos/35735.jpg", "obs": ""}, {"id": 5, "subsistema": "Tarjetas de interfaz y opciones", "funcion": "Puertos traseros COM1 RS232C, ILV, SpO2, Sync, CO2, Temp y conector Extensionbox.", "estado": "Pendiente", "ref": "8413795", "foto": "fotos/35736.jpg", "obs": "Opciones Capno Plus, Ventilation Plus, Monitoring Plus"}]}, {"id": "EQ-02", "familia": "UCI y Soporte Vital", "icono": "❤️", "nombre": "Monitor de Signos Vitales", "marca": "Philips", "modelo": "SureSigns VS3 (REF 863071)", "sn": "CN75107223", "anio": "2008 (2008-01)", "tension": "100 - 240 V~ (50/60 Hz)", "consumo": "120 VA (Fusible T 1.6A 250V)", "sat": "Philips Medical Systems", "estado_catalogo": "Descatalogado", "equivalente": "Philips SureSigns VS4 / Philips EarlyVue VS30", "manual_titulo": "Philips SureSigns VS3 Guía de uso (Ref. 453564130541) / Service Manual (Ref. 453564106461)", "manual_query": "Philips SureSigns VS3 Service Manual 453564106461 PDF", "imagenes": ["fotos/35739.jpg", "fotos/35740.jpg", "fotos/35741.jpg", "fotos/35762.jpg"], "modelo3d": "", "descripcion": "Monitor portátil para supervisión fisiológica en tiempo real de presión arterial no invasiva (PANI) y saturación de oxígeno en sangre (SpO2).", "despiece": [{"id": 1, "subsistema": "Pantalla y botonera frontal", "funcion": "Display LCD color, rueda de navegación naranja, botones de alarma, PANI, impresión y encendido.", "estado": "Pendiente", "ref": "", "foto": "fotos/35739.jpg", "obs": ""}, {"id": 2, "subsistema": "Módulo lateral de adquisición", "funcion": "Conector azul de 8 pines para SpO2 y conector circular rojo para manguera de PANI.", "estado": "Pendiente", "ref": "", "foto": "fotos/35741.jpg", "obs": ""}, {"id": 3, "subsistema": "Bomba neumática interna PANI", "funcion": "Compresor interno, transductor de presión y electroválvulas para inflado del manguito.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}, {"id": 4, "subsistema": "Placa de comunicaciones y energía", "funcion": "Entrada IEC con abrazadera, toma equipotencial, puerto USB y puerto Ethernet RJ45 (LAN).", "estado": "Pendiente", "ref": "863071", "foto": "fotos/35740.jpg", "obs": ""}, {"id": 5, "subsistema": "Accesorios externos de paciente", "funcion": "Manguito adulto Riester con tubo gris, sensor de pinza SpO2 y cable de alimentación.", "estado": "Pendiente", "ref": "", "foto": "fotos/35762.jpg", "obs": ""}]}, {"id": "EQ-03", "familia": "Equipamiento Dental", "icono": "🦷", "nombre": "Compresor de Aire Dental", "marca": "Dürr Dental", "modelo": "Typ 5210 (Depósito Silit-Werke)", "sn": "Motor: 46544 | Depósito: 393509", "anio": "1986", "tension": "220 V~ (50 Hz)", "consumo": "1550 W / 8.7 A (100% ED)", "sat": "Dürr Dental", "estado_catalogo": "Descatalogado", "equivalente": "Dürr Dental Tornado 1 / Dürr Dental Duo", "manual_titulo": "Dürr Dental Tornado 1 / Duo Manual de instalación y uso (Equivalente a Typ 5210)", "manual_query": "Durr Dental Tornado 1 manual instalacion uso PDF", "imagenes": ["fotos/35742.jpg", "fotos/35743.jpg", "fotos/35744.jpg"], "modelo3d": "", "descripcion": "Compresor odontológico sin aceite que genera y almacena aire comprimido seco e higiénico (20 L a 7 bar) para accionar turbinas, micromotores y jeringas del sillón dental.", "despiece": [{"id": 1, "subsistema": "Cabezal compresor bicilíndrico", "funcion": "Bloque de cilindros con aletas de refrigeración de aluminio y pistones secos (sin aceite).", "estado": "Pendiente", "ref": "Typ 5210", "foto": "fotos/35743.jpg", "obs": ""}, {"id": 2, "subsistema": "Motor eléctrico monofásico", "funcion": "Motor de inducción de 1550 W (220 V, 8.7 A) acoplado al bloque con caja de bornes superior.", "estado": "Pendiente", "ref": "Nr. 46544", "foto": "fotos/35742.jpg", "obs": ""}, {"id": 3, "subsistema": "Calderín / Depósito de presión", "funcion": "Tanque azul de 20 Litros (presión máx. trabajo 7 bar), fabricado por Silit-Werke en 1986.", "estado": "Pendiente", "ref": "393509", "foto": "fotos/35744.jpg", "obs": ""}, {"id": 4, "subsistema": "Presostato y válvulas de seguridad", "funcion": "Caja de maniobra de arranque/parada por presión, latiguillo metálico y válvula de purga.", "estado": "Pendiente", "ref": "", "foto": "fotos/35743.jpg", "obs": ""}, {"id": 5, "subsistema": "Sistema de admisión y filtrado", "funcion": "Filtro de aspiración de aire superior y conductos neumáticos de salida.", "estado": "Pendiente", "ref": "", "foto": "fotos/35743.jpg", "obs": ""}]}, {"id": "EQ-04", "familia": "Equipamiento Dental", "icono": "🦷", "nombre": "Sistema de Aspiración Dental", "marca": "Cattani", "modelo": "Turbo SMART 2V (Cód. 035135)", "sn": "Chasis: WP229285 | Soplante: LF187700 | Sep: XD390034", "anio": "2018 (04/2018)", "tension": "230 V~ (1~ 50-60 Hz)", "consumo": "9 A (Soplante 1.5 kW + Separador 1.0 kW)", "sat": "Cattani S.p.A.", "estado_catalogo": "En vigor / Activo", "equivalente": "Cattani Turbo SMART A / B (Modelo actual)", "manual_titulo": "Manual de uso y mantenimiento Cattani Turbo SMART (Cód. 035135)", "manual_query": "Cattani Turbo SMART 035135 manual PDF", "imagenes": ["fotos/35745.jpg", "fotos/35746.jpg", "fotos/35747.jpg", "fotos/35748.jpg"], "modelo3d": "", "descripcion": "Unidad de aspiración quirúrgica dental en húmedo con variador electrónico de frecuencia (Inverter) y separador centrífugo integrado para aislar líquidos y sólidos.", "despiece": [{"id": 1, "subsistema": "Motor soplante de succión (Inferior)", "funcion": "Motor trifásico Uni Jet 75 2V (1.5 kW, 4800 rpm) generador de vacío y escape de aire.", "estado": "Pendiente", "ref": "Cod. 019164", "foto": "fotos/35748.jpg", "obs": "S/N LF187700"}, {"id": 2, "subsistema": "Motor separador centrífugo (Superior)", "funcion": "Motor asíncrono compacto (1.0 kW, 2750 rpm) para separar fluidos/espuma del flujo de aire.", "estado": "Pendiente", "ref": "Cod. 025400", "foto": "fotos/35747.jpg", "obs": "S/N XD390034"}, {"id": 3, "subsistema": "Cuadro electrónico e Inverter", "funcion": "Torreta lateral con pantalla LCD 'Turbo SMART', teclado de membrana, ranura MicroSD e interruptor.", "estado": "Pendiente", "ref": "Cod. 035135", "foto": "fotos/35745.jpg", "obs": ""}, {"id": 4, "subsistema": "Colector de entrada y desagüe", "funcion": "Tubo de admisión con tapón amarillo de acceso, racores hidráulicos y drenaje de residuos.", "estado": "Pendiente", "ref": "", "foto": "fotos/35745.jpg", "obs": ""}, {"id": 5, "subsistema": "Chasis y tobera de escape", "funcion": "Bancada metálica blanca con silentblocks de goma y salida de aire caliente (Ejected Air Outlet).", "estado": "Pendiente", "ref": "", "foto": "fotos/35746.jpg", "obs": "Precaución: superficie muy caliente"}]}, {"id": "EQ-05", "familia": "Endoscopia e Imagen Médica", "icono": "🔬", "nombre": "Procesador de Cámara Endoscópica (CCU)", "marca": "Karl Storz", "modelo": "Dx-cam pal (Ref. 20230020)", "sn": "No visible en carcasa", "anio": "No visible", "tension": "100 - 240 V~ (Fusible T0.4A 250V)", "consumo": "No visible", "sat": "Karl Storz Endoskope", "estado_catalogo": "Descatalogado", "equivalente": "Karl Storz Telecam DX II (20232020) / Telecam SL pal", "manual_titulo": "Karl Storz Dx-cam 20230020 Manual / Telecam DX II Instruction Manual", "manual_query": "Karl Storz 20230020 Telecam DX manual PDF", "imagenes": ["fotos/35749.jpg", "fotos/35750.jpg"], "modelo3d": "", "descripcion": "Unidad de control de cámara (CCU) que procesa la señal captada por el cabezal del endoscopio y la convierte en vídeo analógico PAL para monitores quirúrgicos.", "despiece": [{"id": 1, "subsistema": "Conector frontal de cámara", "funcion": "Receptáculo multipin rectangular en el panel derecho para conectar el cabezal de cámara.", "estado": "Pendiente", "ref": "20230020", "foto": "fotos/35749.jpg", "obs": ""}, {"id": 2, "subsistema": "Controles de operación frontales", "funcion": "Interruptor general basculante verde (I/O) y pulsador negro de balance de blancos.", "estado": "Pendiente", "ref": "", "foto": "fotos/35749.jpg", "obs": ""}, {"id": 3, "subsistema": "Etapa de salidas de vídeo (Trasera)", "funcion": "1 conector BNC de vídeo compuesto (COMP VIDEO) y 2 puertos Mini-DIN de 4 pines (S-VIDEO).", "estado": "Pendiente", "ref": "", "foto": "fotos/35750.jpg", "obs": ""}, {"id": 4, "subsistema": "Puerto de teclado (Keyboard In)", "funcion": "Conector DIN de 5 pines trasero para conectar teclado e insertar datos del paciente.", "estado": "Pendiente", "ref": "", "foto": "fotos/35750.jpg", "obs": ""}, {"id": 5, "subsistema": "Fuente de alimentación y seguridad", "funcion": "Toma IEC con portafusibles integrado (T0.4A 250V) y borne equipotencial de tierra.", "estado": "Pendiente", "ref": "", "foto": "fotos/35750.jpg", "obs": "Made in U.S.A."}]}, {"id": "EQ-06", "familia": "Endoscopia e Imagen Médica", "icono": "💡", "nombre": "Fuente de Luz Endoscópica", "marca": "COMEG Endoskopie", "modelo": "HALOGEN (Ref. CH 250/41)", "sn": "41068", "anio": "1998 (Código 9801)", "tension": "115 - 230 VAC (50/60 Hz)", "consumo": "330 W / 1.6 A (Fusibles 2xT 2.5A)", "sat": "COMEG Endoskopie (Grupo Acteon / Sopro-Comeg)", "estado_catalogo": "Descatalogado", "equivalente": "Karl Storz Cold Light Fountain Halogen 250 Twin (20113320)", "manual_titulo": "COMEG CH 250/41 Manual / Equivalente Karl Storz Halogen 250 Twin User Manual", "manual_query": "Karl Storz Halogen 250 Twin user manual PDF", "imagenes": ["fotos/35751.jpg", "fotos/35752.jpg"], "modelo3d": "", "descripcion": "Fuente de luz fría halógena de 330 W que transmite iluminación de alta intensidad mediante un cable de fibra óptica hacia el endoscopio durante exploraciones médicas.", "despiece": [{"id": 1, "subsistema": "Torreta de conexión óptica", "funcion": "Receptáculo cilíndrico metálico frontal para acoplar el cable de fibra óptica.", "estado": "Pendiente", "ref": "", "foto": "fotos/35751.jpg", "obs": ""}, {"id": 2, "subsistema": "Panel de control frontal", "funcion": "Interruptor verde (Power 1/0), testigo rojo de lámpara y botones amarillos (Intensity).", "estado": "Pendiente", "ref": "", "foto": "fotos/35751.jpg", "obs": ""}, {"id": 3, "subsistema": "Compartimento de lámpara halógena", "funcion": "Portalámparas cerámico interno de alta temperatura, reflector dicroico y lámpara.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}, {"id": 4, "subsistema": "Sistema de refrigeración forzada", "funcion": "Ventilador axial interno y rejillas de ventilación para disipar los 330 W.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}, {"id": 5, "subsistema": "Módulo eléctrico trasero", "funcion": "Selector de tensión (230V), portafusibles doble (2xT 2.5A), toma IEC y borne equipotencial.", "estado": "Pendiente", "ref": "CH 250/41", "foto": "fotos/35752.jpg", "obs": "Clase CF, Made in Germany"}]}, {"id": "EQ-07", "familia": "Esterilización y Desinfección", "icono": "♨️", "nombre": "Autoclave de Vapor (1)", "marca": "Tuttnauer", "modelo": "Elara9-W-D", "sn": "16010874", "anio": "2018", "tension": "230 V~ (50 Hz)", "consumo": "10 A", "sat": "Tuttnauer", "estado_catalogo": "En vigor / Activo", "equivalente": "Tuttnauer Elara 9D / Elara 11D", "manual_titulo": "Tuttnauer Elara 9D / Elara 11D Operation & Maintenance Manual / Service Manual", "manual_query": "Tuttnauer Elara 9D user service manual PDF", "imagenes": ["fotos/image_75546b.jpg", "fotos/image_755506.jpg"], "modelo3d": "", "descripcion": "Esterilizador de vapor de sobremesa (Autoclave Clase B) con cámara de acero inoxidable de 19.8 litros, bomba de vacío e impresora térmica de ciclos integrada.", "despiece": [{"id": 1, "subsistema": "Cámara de esterilización y puerta", "funcion": "Cámara de 19.8 L (presión máx. 2.8 bar, prueba 4.1 bar), puerta con bloqueo y junta.", "estado": "Pendiente", "ref": "ELARA9-W-D", "foto": "fotos/image_75546b.jpg", "obs": ""}, {"id": 2, "subsistema": "Panel de control y pantalla digital", "funcion": "Display frontal superior derecho y botonera circular (Up, Down, Start/Stop).", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755506.jpg", "obs": ""}, {"id": 3, "subsistema": "Impresora térmica integrada", "funcion": "Módulo impresor frontal inferior para emisión de tickets de trazabilidad de cada ciclo.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755506.jpg", "obs": ""}, {"id": 4, "subsistema": "Sistema hidráulico y drenajes", "funcion": "Reservorios internos y tomas inferiores de vaciado (Waste Water Drain / Clean Water Drain).", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755506.jpg", "obs": ""}, {"id": 5, "subsistema": "Generador de vapor y bomba de vacío", "funcion": "Resistencias calefactoras, electroválvulas, transductores y bomba de vacío fraccionado.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}]}, {"id": "EQ-08", "familia": "Esterilización y Desinfección", "icono": "♨️", "nombre": "Autoclave de Vapor (2)", "marca": "Tuttnauer", "modelo": "2540EKA", "sn": "2407110 (Inv. Gob. Canarias: 99016)", "anio": "2004", "tension": "230 V~ (50/60 Hz, 1 Ph)", "consumo": "9.6 A", "sat": "Tuttnauer", "estado_catalogo": "Descatalogado", "equivalente": "Tuttnauer 2540E / 2540EA / Serie M-EKA", "manual_titulo": "Tuttnauer 1730 / 2340 / 2540 / 3870 E / EK / EKA Operator & Service Manual", "manual_query": "Tuttnauer 2540EKA service manual PDF", "imagenes": ["fotos/image_755542.jpg", "fotos/image_7557e8.jpg"], "modelo3d": "", "descripcion": "Autoclave automático de vapor con cámara de 23 litros, cierre mecánico radial mediante volante frontal, manómetro analógico de presión e impresora de panel.", "despiece": [{"id": 1, "subsistema": "Cámara de presión y cierre radial", "funcion": "Cámara de 23 L (máx. 2.76 bar, prueba 4.30 bar) con volante de cierre mecánico izquierdo.", "estado": "Pendiente", "ref": "2540EKA", "foto": "fotos/image_755542.jpg", "obs": ""}, {"id": 2, "subsistema": "Manómetro analógico y display", "funcion": "Manómetro en puerta frontal, pantalla LCD alfanumérica y botonera vertical de control.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755542.jpg", "obs": ""}, {"id": 3, "subsistema": "Impresora de panel y puerto serie", "funcion": "Impresora frontal derecha, puerto de datos DB9 (RS-232) e interruptor general luminoso rojo.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755542.jpg", "obs": ""}, {"id": 4, "subsistema": "Depósito superior y válvulas", "funcion": "Acceso superior al depósito de agua destilada, válvula de seguridad certificada y termostato.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_7557e8.jpg", "obs": ""}, {"id": 5, "subsistema": "Elementos calefactores y tarjeta EKA", "funcion": "Resistencias abrazaderas de cámara, sondas PT100 y placa electrónica de control.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}]}, {"id": "EQ-09", "familia": "Endoscopia e Imagen Médica", "icono": "🖨️", "nombre": "Impresora de Vídeo Médico", "marca": "Mitsubishi", "modelo": "CP900 (Video Copy Processor)", "sn": "No visible en tomas frontales/superiores", "anio": "No visible", "tension": "100 - 240 V~ (50/60 Hz)", "consumo": "No visible", "sat": "Mitsubishi Electric", "estado_catalogo": "Descatalogado", "equivalente": "Mitsubishi CP900E / CP30DW / Sony UP-25MD", "manual_titulo": "Mitsubishi CP900E / CP900U Video Copy Processor User & Service Manual", "manual_query": "Mitsubishi CP900E Video Copy Processor service manual PDF", "imagenes": ["fotos/image_75580b.jpg", "fotos/image_75580f.jpg", "fotos/image_75582c.jpg"], "modelo3d": "", "descripcion": "Procesador e impresora térmica por sublimación de tinta a color para capturar e imprimir fotogramas desde sistemas de endoscopia, ecografía o microscopía quirúrgica.", "despiece": [{"id": 1, "subsistema": "Panel frontal de operación", "funcion": "Interruptor Power, display LCD, botones Menu/+/-, Monitor, Memory (Feed&Cut) y Print.", "estado": "Pendiente", "ref": "CP900", "foto": "fotos/image_75580b.jpg", "obs": ""}, {"id": 2, "subsistema": "Bandeja de papel y casete de tinta", "funcion": "Compartimento frontal abatible (botón Open) para rollo de papel y cinta de color.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_75580b.jpg", "obs": ""}, {"id": 3, "subsistema": "Cabezal térmico y cuchilla de corte", "funcion": "Cabezal térmico de sublimación y guillotina automática interna (función Feed & Cut).", "estado": "Pendiente", "ref": "", "foto": "fotos/image_75580f.jpg", "obs": "Requiere Media Initialization al cambiar rollo"}, {"id": 4, "subsistema": "Conectores de vídeo y control remoto", "funcion": "Entrada frontal 'Remote' para pedal/disparador y conectores traseros BNC y S-Video.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_75582c.jpg", "obs": ""}, {"id": 5, "subsistema": "Fuente de alimentación interna", "funcion": "Módulo de potencia conmutado y chasis metálico blindado.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_75582c.jpg", "obs": ""}]}, {"id": "EQ-10", "familia": "Equipamiento Dental", "icono": "🦶", "nombre": "Pedal de Control Dental", "marca": "KaVo (DSE) / Komo", "modelo": "Pedal de Control DSE Expert", "sn": "No visible", "anio": "No visible", "tension": "N/A (Control pasivo de baja tensión)", "consumo": "N/A", "sat": "KaVo Dental / Komo", "estado_catalogo": "En vigor / Accesorio", "equivalente": "KaVo DSE Expert Foot Control", "manual_titulo": "KaVo DSE Expert (Dental Simulation Unit) User & Installation Manual", "manual_query": "KaVo DSE Expert simulation unit manual PDF", "imagenes": ["fotos/image_755866.jpg", "fotos/image_755883.jpg"], "modelo3d": "", "descripcion": "Pedal de accionamiento eléctrico/electrónico para unidades de simulación odontológica (DSE), utilizado para activar y regular el instrumental rotatorio con el pie.", "despiece": [{"id": 1, "subsistema": "Pedal pulsador basculante", "funcion": "Pedal gris antideslizante marca Komo para regulación o activación de instrumentos.", "estado": "Pendiente", "ref": "Komo", "foto": "fotos/image_755866.jpg", "obs": ""}, {"id": 2, "subsistema": "Carcasa protectora superior", "funcion": "Arco metálico negro/blanco con serigrafía DSE para protección y reposicionamiento.", "estado": "Pendiente", "ref": "DSE", "foto": "fotos/image_755866.jpg", "obs": ""}, {"id": 3, "subsistema": "Base metálica de apoyo", "funcion": "Plancha inferior negra con fijaciones mecánicas y topes de apoyo en suelo.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755883.jpg", "obs": ""}, {"id": 4, "subsistema": "Manguera y conector multipin", "funcion": "Cable flexible gris con prensaestopas y conector circular metálico roscado multiclavija.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755883.jpg", "obs": ""}, {"id": 5, "subsistema": "Transductor / Microinterruptor interno", "funcion": "Mecanismo interno de conmutación o potenciómetro bajo el pedal basculante.", "estado": "Pendiente", "ref": "", "foto": "", "obs": ""}]}, {"id": "EQ-11", "familia": "Dermoestética y Electroterapia", "icono": "⚡", "nombre": "Monitor / Transmisor Remoto Cardíaco", "marca": "Medtronic", "modelo": "MyCareLink Patient Monitor (Mod. 24952)", "sn": "BTL539047E (Radio Ref: 24950B)", "anio": "2024 (2024-10)", "tension": "5 V DC (Adaptador externo)", "consumo": "3.0 A (Módem USB 5V / 400mA)", "sat": "Medtronic, Inc. / Medtronic B.V.", "estado_catalogo": "En vigor / Activo", "equivalente": "Medtronic MyCareLink 24952 / MyCareLink Heart", "manual_titulo": "Medtronic MyCareLink Patient Monitor 24952 Patient & Clinician Manual (M965132A004)", "manual_query": "Medtronic MyCareLink 24952 patient manual PDF", "imagenes": ["fotos/image_7558c2.jpg", "fotos/image_7558c5.jpg"], "modelo3d": "", "descripcion": "Monitor domiciliario de telemedicina para pacientes con dispositivos cardíacos implantados (marcapasos o desfibriladores). Lee los datos por radiofrecuencia y los transmite por red móvil.", "despiece": [{"id": 1, "subsistema": "Lector de telemetría (Cabezal extraíble)", "funcion": "Antena lectora ovalada central que se coloca sobre el pecho para interrogar el implante.", "estado": "Pendiente", "ref": "24950B", "foto": "fotos/image_7558c2.jpg", "obs": ""}, {"id": 2, "subsistema": "Base con pantalla LCD y controles", "funcion": "Unidad base blanca/azul con pantalla gráfica de estado y botones de navegación.", "estado": "Pendiente", "ref": "24952", "foto": "fotos/image_7558c2.jpg", "obs": ""}, {"id": 3, "subsistema": "Módulo celular USB lateral", "funcion": "Módem USB celular 4G extraíble (Model K41VE) acoplado en el compartimento inferior.", "estado": "Pendiente", "ref": "K41VE", "foto": "fotos/image_7558c5.jpg", "obs": ""}, {"id": 4, "subsistema": "Etapa de alimentación DC", "funcion": "Entrada de corriente continua de 5V === 3.0A para fuente de alimentación externa.", "estado": "Pendiente", "ref": "M963336A010", "foto": "fotos/image_7558c5.jpg", "obs": "Grado protección IP21"}]}, {"id": "EQ-12", "familia": "Dermoestética y Electroterapia", "icono": "✨", "nombre": "Equipo de Radiofrecuencia Fraccionada", "marca": "Daeshin Enterprise (DSE)", "modelo": "DeAge EX (Ref. DS-40R)", "sn": "1507", "anio": "2012 (2012.10.25)", "tension": "220 - 230 VAC (50/60 Hz)", "consumo": "450 VA", "sat": "Daeshin Enterprise Co., Ltd / Quanta Service (Francia)", "estado_catalogo": "Descatalogado", "equivalente": "Daeshin DeAge EX / Secret RF", "manual_titulo": "Daeshin Enterprise DeAge EX (DS-40R) Operator's Manual", "manual_query": "Daeshin Enterprise DeAge EX DS-40R manual PDF", "imagenes": ["fotos/image_755ca2.jpg", "fotos/image_755ca7.jpg", "fotos/image_755cbf.jpg"], "modelo3d": "", "descripcion": "Sistema médico-estético de radiofrecuencia fraccionada con microagujas. Permite regular profundidad de aguja (mm), nivel de potencia RF, tiempo de repetición y modos automáticos/manuales.", "despiece": [{"id": 1, "subsistema": "Pantalla táctil e interfaz de control", "funcion": "Display LCD táctil con ajuste de Needle Length (0.8 mm), Output Level, Repeat Time y memorias M1-M3.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755ca2.jpg", "obs": ""}, {"id": 2, "subsistema": "Generador interno de Radiofrecuencia", "funcion": "Módulo de potencia de RF de 450 VA con aislamiento de seguridad Clase I Tipo BF.", "estado": "Pendiente", "ref": "DS-40R", "foto": "fotos/image_755cbf.jpg", "obs": ""}, {"id": 3, "subsistema": "Manípulo (Handpiece) y soporte", "funcion": "Aplicador motorizado de inserción/extracción de cartuchos de microagujas.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755ca2.jpg", "obs": ""}, {"id": 4, "subsistema": "Panel eléctrico inferior trasero", "funcion": "Interruptor general luminoso verde (POWER), portafusibles (FUSE) y conector (FOOT SWITCH).", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755cbf.jpg", "obs": ""}, {"id": 5, "subsistema": "Chasis tipo torre con ruedas", "funcion": "Pedestal vertical blanco/negro sobre base rodante de 4 ruedas giratorias.", "estado": "Pendiente", "ref": "", "foto": "fotos/image_755ca7.jpg", "obs": "Peso: 20 kg"}]}];
 const BASE_CHECKLIST = [{"num": 1, "punto": "Inspección visual de carcasa y estructura", "criterio": "Verificar ausencia de roturas, golpes, óxido, tornillos faltantes o ruedas/patas dañadas."}, {"num": 2, "punto": "Placa de características e inventario", "criterio": "Comprobar legibilidad de marca, modelo, S/N, marcado CE y ubicación para etiqueta QR."}, {"num": 3, "punto": "Cable de alimentación y enchufe", "criterio": "Revisar estado del aislamiento del cable, clavija Schuko/IEC y retención mecánica."}, {"num": 4, "punto": "Fusibles y protección eléctrica", "criterio": "Extraer y comprobar continuidad y amperaje correcto de los fusibles en el portafusibles."}, {"num": 5, "punto": "Toma de tierra y seguridad eléctrica", "criterio": "Verificar continuidad del chasis/borne equipotencial a tierra y ausencia de derivaciones."}, {"num": 6, "punto": "Conectores, puertos y tomas neumáticas/hidráulicas", "criterio": "Inspeccionar pines doblados, holguras, fugas en racores de aire/agua o juntas deterioradas."}, {"num": 7, "punto": "Accesorios, cables de paciente y consumibles", "criterio": "Comprobar presencia y estado de accesorios (manguitos, sondas, pedales, papel térmico, tubos)."}, {"num": 8, "punto": "Prueba de encendido e inicialización (POST)", "criterio": "Conectar a red, accionar interruptor principal y verificar secuencia de arranque sin errores."}, {"num": 9, "punto": "Pantalla, indicadores luminosos y alarmas", "criterio": "Comprobar brillo/contraste del display, funcionamiento de LEDs y altavoz de alarmas."}, {"num": 10, "punto": "Botonera, teclado, pantalla táctil y mandos", "criterio": "Probar la respuesta mecánica/táctil de todos los botones, ruedas de selección e interruptores."}, {"num": 11, "punto": "Prueba funcional específica del equipo", "criterio": "Ejecutar un ciclo/modo de prueba real (soplado, vacío, calentamiento, captura de vídeo, etc.)."}, {"num": 12, "punto": "Limpieza, desinfección y dictamen final", "criterio": "Limpieza externa/interna de polvo o residuos y valoración global de operatividad."}];
 
-const STORAGE_KEY = "electromedicina_qr_github_v3";
-// Cambia este valor cuando tengas tu enlace definitivo de GitHub Pages:
+const STORAGE_KEY = "electromedicina_qr_github_v4";
+const PREV_STORAGE_KEY = "electromedicina_qr_github_v3";
 const DEFAULT_GITHUB_URL = "https://webparanac.github.io/webparaMaquinas/";
 
-// Diccionario de blobs temporales en sesión para previsualizar archivos .glb o fotos locales grandes
+// Diccionarios en memoria para modelos 3D (.html / .glb) e imágenes verificadas
 const sessionObjectUrls = {};
+const verified3DStatus = {};
+const loadedCardImages = {};
+
+function showToast(msg) {
+  const el = document.getElementById("toastNotice");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => {
+    el.classList.remove("show");
+  }, 3200);
+}
+
+// Base de datos IndexedDB para permitir guardar modelos 3D (.html / .glb) y fotos de gran tamaño sin límite de 5MB
+const IDB_NAME = "ElectromedicinaQR_DB";
+const IDB_STORE = "app_state_store";
+
+function openAppDB() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) { reject("No IndexedDB"); return; }
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = function(e) {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+    req.onsuccess = function(e) { resolve(e.target.result); };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+function idbSaveState(stateObj) {
+  openAppDB().then(db => {
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    tx.objectStore(IDB_STORE).put(JSON.parse(JSON.stringify(stateObj)), "main_state");
+  }).catch(() => {});
+}
+
+function idbLoadState() {
+  return openAppDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const req = tx.objectStore(IDB_STORE).get("main_state");
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  }).catch(() => null);
+}
+
+function sanitizePlaceholderModels(parsed) {
+  if (!parsed || !parsed.equipos) return;
+  Object.values(parsed.equipos).forEach(eq => {
+    if (eq.modelo3d && /^models\/EQ-\d+\.(html|glb)$/i.test(eq.modelo3d) && !eq.modelo3dCustom && !eq.modelo3dHtml) {
+      eq.modelo3d = "";
+    }
+  });
+}
 
 function loadState() {
-  const saved = localStorage.getItem(STORAGE_KEY);
+  const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(PREV_STORAGE_KEY);
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      // Si se añadieron máquinas nuevas en el código HTML de GitHub, incorporarlas automáticamente
+      sanitizePlaceholderModels(parsed);
       INITIAL_EQUIPOS.forEach(eq => {
         if (!parsed.equipos[eq.id]) {
           parsed.equipos[eq.id] = {
@@ -600,6 +765,16 @@ function loadState() {
               }
             ]
           };
+        } else {
+          // Si el HTML descargado para GitHub trae fotos o modelo3dHtml embebidos, incorporarlos
+          if (eq.imagenPortada && !parsed.equipos[eq.id].imagenPortada) {
+            parsed.equipos[eq.id].imagenPortada = eq.imagenPortada;
+          }
+          if (eq.modelo3dHtml && !parsed.equipos[eq.id].modelo3dHtml) {
+            parsed.equipos[eq.id].modelo3dHtml = eq.modelo3dHtml;
+            parsed.equipos[eq.id].modelo3d = eq.modelo3d;
+            parsed.equipos[eq.id].modelo3dCustom = true;
+          }
         }
       });
       return parsed;
@@ -613,22 +788,22 @@ function loadState() {
   INITIAL_EQUIPOS.forEach(eq => {
     state.equipos[eq.id] = {
       ...eq,
-      grupoAsignado: "",
-      estadoGlobal: "Pendiente de Diagnóstico",
-      urlManualDrive: "",
-      galeria: eq.imagenes.map(img => ({
+      grupoAsignado: eq.grupoAsignado || "",
+      estadoGlobal: eq.estadoGlobal || "Pendiente de Diagnóstico",
+      urlManualDrive: eq.urlManualDrive || "",
+      galeria: eq.galeria || (eq.imagenes || []).map(img => ({
         url: img,
         titulo: "Foto de referencia (" + img.replace("fotos/", "") + ")",
         fecha: "2026-10-14"
       })),
-      checklist: BASE_CHECKLIST.map(item => ({
+      checklist: eq.checklist || BASE_CHECKLIST.map(item => ({
         ...item,
         resultado: "Pendiente",
         prioridad: "Media",
         responsable: "",
         hallazgos: ""
       })),
-      diario: [
+      diario: eq.diario || [
         {
           fecha: "2026-10-14",
           grupo: "Grupo Inicial",
@@ -641,7 +816,7 @@ function loadState() {
       ]
     };
   });
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
   return state;
 }
 
@@ -651,11 +826,50 @@ let filterFamily = "Todas";
 let filterStatus = "Todos";
 let searchQuery = "";
 
+// Cargar datos pesados desde IndexedDB al iniciar (por si un modelo 3D HTML superaba los 5MB de localStorage)
+idbLoadState().then(idbState => {
+  if (idbState && idbState.equipos) {
+    sanitizePlaceholderModels(idbState);
+    let updated = false;
+    Object.keys(idbState.equipos).forEach(k => {
+      const idbEq = idbState.equipos[k];
+      if (!appState.equipos[k]) {
+        appState.equipos[k] = idbEq;
+        updated = true;
+      } else {
+        if (idbEq.modelo3dHtml && !appState.equipos[k].modelo3dHtml) {
+          appState.equipos[k].modelo3dHtml = idbEq.modelo3dHtml;
+          appState.equipos[k].modelo3d = idbEq.modelo3d;
+          appState.equipos[k].modelo3dCustom = true;
+          updated = true;
+        }
+        if (idbEq.imagenPortada && !appState.equipos[k].imagenPortada) {
+          appState.equipos[k].imagenPortada = idbEq.imagenPortada;
+          appState.equipos[k].galeria = idbEq.galeria;
+          updated = true;
+        }
+      }
+    });
+    if (updated) render();
+  }
+});
+
 function saveState() {
+  // Guardar siempre copia completa en IndexedDB (soporta cientos de MB para modelos 3D HTML y fotos)
+  idbSaveState(appState);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
   } catch (err) {
-    alert("Aviso: La imagen subida es demasiado pesada para la memoria local del navegador. Para fotos de alta resolución, guárdalas en la carpeta 'fotos/' de tu repositorio en GitHub.");
+    // Si el modelo 3D HTML es muy grande (>5MB), guardar versión ligera en localStorage y el 3D completo en IndexedDB
+    try {
+      const lightState = JSON.parse(JSON.stringify(appState));
+      Object.values(lightState.equipos).forEach(eq => {
+        if (eq.modelo3dHtml && eq.modelo3dHtml.length > 200000) {
+          eq.modelo3dHtml = "";
+        }
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(lightState));
+    } catch (e2) {}
   }
 }
 
@@ -743,6 +957,127 @@ function render() {
   }
 }
 
+function getPrimaryImageUrl(eq) {
+  if (!eq) return "";
+  if (eq.imagenPortada !== undefined) {
+    return eq.imagenPortada;
+  }
+  if (eq.galeria && eq.galeria.length > 0 && eq.galeria[0].url) {
+    return eq.galeria[0].url;
+  }
+  if (eq.imagenes && eq.imagenes.length > 0 && eq.imagenes[0]) {
+    return eq.imagenes[0];
+  }
+  return "";
+}
+
+function getActive3DInfo(eq) {
+  if (!eq) return null;
+  if (sessionObjectUrls[eq.id]) {
+    return sessionObjectUrls[eq.id];
+  }
+  if (eq.modelo3dHtml) {
+    const blob = new Blob([eq.modelo3dHtml], { type: "text/html;charset=utf-8" });
+    const blobUrl = URL.createObjectURL(blob);
+    sessionObjectUrls[eq.id] = { url: blobUrl, type: "html", name: eq.modelo3d || (eq.id + ".html") };
+    return sessionObjectUrls[eq.id];
+  }
+  const rawPath = (eq.modelo3d || "").trim();
+  if (!rawPath) return null;
+  if (/^models\/EQ-\d+\.(html|glb)$/i.test(rawPath) && !eq.modelo3dCustom) {
+    return null;
+  }
+  const isGlb = rawPath.toLowerCase().endsWith(".glb") || rawPath.toLowerCase().endsWith(".gltf");
+  return { url: rawPath, type: isGlb ? "glb" : "html", name: rawPath };
+}
+
+function handleCardImgLoad(eqId) {
+  loadedCardImages[eqId] = true;
+  const stage = document.getElementById("media-stage-" + eqId);
+  const card = document.getElementById("card-" + eqId);
+  const badge = document.getElementById("media-badge-" + eqId);
+  if (stage) stage.classList.add("has-valid-img");
+
+  const eq = appState.equipos[eqId];
+  const has3D = !!getActive3DInfo(eq);
+  if (has3D && card) {
+    card.classList.add("has-both-media");
+    if (badge) {
+      badge.style.display = "inline-block";
+      badge.innerHTML = "🧊 Pasa el cursor para ver en 3D";
+    }
+  } else if (card) {
+    card.classList.remove("has-both-media");
+    if (badge) badge.style.display = "none";
+  }
+}
+
+function handleCardImgError(eqId) {
+  loadedCardImages[eqId] = false;
+  const stage = document.getElementById("media-stage-" + eqId);
+  const card = document.getElementById("card-" + eqId);
+  if (stage) stage.classList.remove("has-valid-img", "show-3d");
+  if (card) card.classList.remove("has-both-media");
+}
+
+function mountCard3DViewer(eqId) {
+  const slot = document.getElementById("media-3d-" + eqId);
+  if (!slot || slot.dataset.mounted === "true") return;
+  const eq = appState.equipos[eqId];
+  if (!eq) return;
+  const info = getActive3DInfo(eq);
+  if (!info) return;
+
+  if (info.type === "glb") {
+    slot.innerHTML = `
+      <model-viewer
+        src="${info.url}"
+        alt="Modelo 3D de ${eq.nombre}"
+        auto-rotate
+        camera-controls
+        shadow-intensity="1"
+        exposure="1">
+      </model-viewer>
+    `;
+  } else {
+    slot.innerHTML = `
+      <iframe
+        src="${info.url}"
+        title="Modelo 3D de ${eq.nombre}"
+        allow="fullscreen; xr-spatial-tracking; accelerometer; gyroscope">
+      </iframe>
+    `;
+  }
+  slot.dataset.mounted = "true";
+}
+
+function handleCardMouseEnter(eqId) {
+  const card = document.getElementById("card-" + eqId);
+  const stage = document.getElementById("media-stage-" + eqId);
+  const badge = document.getElementById("media-badge-" + eqId);
+  if (!card || !stage) return;
+  if (!card.classList.contains("has-both-media")) return;
+
+  mountCard3DViewer(eqId);
+  stage.classList.add("show-3d");
+  if (badge) {
+    badge.innerHTML = "✨ Modelo 3D Interactivo Activo";
+  }
+}
+
+function handleCardMouseLeave(eqId) {
+  const card = document.getElementById("card-" + eqId);
+  const stage = document.getElementById("media-stage-" + eqId);
+  const badge = document.getElementById("media-badge-" + eqId);
+  if (!card || !stage) return;
+  if (!card.classList.contains("has-both-media")) return;
+
+  stage.classList.remove("show-3d");
+  if (badge) {
+    badge.innerHTML = "🧊 Pasa el cursor para ver en 3D";
+  }
+}
+
 function buildCardsHtml() {
   const list = Object.values(appState.equipos);
   const filtered = list.filter(eq => {
@@ -772,19 +1107,35 @@ function buildCardsHtml() {
   return filtered.map(eq => {
     const prog = calcChecklistProgress(eq);
     const numFotos = eq.galeria ? eq.galeria.length : (eq.imagenes ? eq.imagenes.length : 0);
+    const coverImg = getPrimaryImageUrl(eq);
+    const info3d = getActive3DInfo(eq);
+    const has3D = !!info3d;
+    const isDirectImg = coverImg && (coverImg.startsWith("data:") || coverImg.startsWith("blob:") || loadedCardImages[eq.id] === true);
+    const bothReadyNow = isDirectImg && has3D;
+    const label3D = has3D ? (eq.modelo3d || info3d.name || "Cargado") : "Sin asignar";
+
     return `
-    <div class="card">
+    <div class="card ${bothReadyNow ? 'has-both-media' : ''}" id="card-${eq.id}" onmouseenter="handleCardMouseEnter('${eq.id}')" onmouseleave="handleCardMouseLeave('${eq.id}')">
       <div class="card-header">
         <span class="eq-id">${eq.id}</span>
         <span class="family-tag">${eq.icono || '🛠️'} ${eq.familia}</span>
       </div>
+      ${coverImg ? `
+      <div class="card-media-stage ${isDirectImg ? 'has-valid-img' : ''}" id="media-stage-${eq.id}">
+        <div class="card-media-img-layer">
+          <img src="${coverImg}" alt="${eq.nombre}" onload="handleCardImgLoad('${eq.id}')" onerror="handleCardImgError('${eq.id}')" />
+        </div>
+        <div class="card-media-3d-layer" id="media-3d-${eq.id}"></div>
+        <span class="card-media-badge" id="media-badge-${eq.id}" style="display:${bothReadyNow ? 'inline-block' : 'none'};">🧊 Pasa el cursor para ver en 3D</span>
+      </div>
+      ` : ''}
       <div class="card-body">
         <div class="card-title">${eq.nombre}</div>
         <div class="card-sub">${eq.marca} — ${eq.modelo}</div>
         <ul class="meta-list">
           <li><span>S/N o Inv.:</span> <strong>${eq.sn}</strong></li>
           <li><span>Año Fab.:</span> <strong>${eq.anio}</strong></li>
-          <li><span>Multimedia:</span> <strong>📸 ${numFotos} fotos | 🧊 3D (${eq.modelo3d})</strong></li>
+          <li><span>Multimedia:</span> <strong>📸 ${numFotos} fotos | 🧊 3D: ${label3D}</strong></li>
           <li><span>Grupo Asignado:</span> <strong>${eq.grupoAsignado || 'Sin asignar'}</strong></li>
         </ul>
         <div style="margin-bottom:0.6rem;">
@@ -802,8 +1153,8 @@ function buildCardsHtml() {
       </div>
       <div class="card-footer">
         <div style="display:flex; gap:0.35rem;">
-          <button class="btn btn-light" style="padding:0.4rem 0.6rem; font-size:0.78rem;" onclick="openEquipo('${eq.id}', 'fotos')" title="Ver Fotos">📸</button>
-          <button class="btn btn-light" style="padding:0.4rem 0.6rem; font-size:0.78rem;" onclick="openEquipo('${eq.id}', 'modelo3d')" title="Ver Modelo 3D">🧊 3D</button>
+          <button class="btn btn-light" style="padding:0.4rem 0.6rem; font-size:0.78rem;" onclick="openEquipo('${eq.id}', 'fotos')" title="Subir o Ver Fotos">📸 Fotos</button>
+          <button class="btn btn-light" style="padding:0.4rem 0.6rem; font-size:0.78rem;" onclick="openEquipo('${eq.id}', 'modelo3d')" title="Subir o Ver Modelo 3D">🧊 3D</button>
         </div>
         <button class="btn btn-primary" onclick="openEquipo('${eq.id}', 'despiece')">Abrir Ficha QR →</button>
       </div>
@@ -1137,8 +1488,8 @@ function renderTabContent(eq) {
           <div style="flex:1; min-width:240px;">
             <label style="font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.25rem;">🔗 Opción 2: Ruta de tu archivo 3D (<code>.html</code> o <code>.glb</code>) en tu GitHub:</label>
             <div style="display:flex; gap:0.5rem;">
-              <input type="text" style="flex:1;" value="${eq.modelo3d || ''}" placeholder="Ej: models/${eq.id}.html o modelo3d.html" onchange="setCustom3DPath('${eq.id}', this.value)" />
-              <button class="btn btn-primary" onclick="render()">🔄 Aplicar</button>
+              <input type="text" id="custom3dInput-${eq.id}" style="flex:1;" value="${eq.modelo3d || ''}" placeholder="Ej: models/${eq.id}.html o modelo3d.html" />
+              <button class="btn btn-primary" onclick="setCustom3DPath('${eq.id}', document.getElementById('custom3dInput-${eq.id}').value)">🔄 Aplicar Ruta</button>
             </div>
           </div>
 
@@ -1458,8 +1809,10 @@ function handleNewPhotoFile(event, eqId) {
     });
     // Establecer automáticamente como imagen de portada en la pantalla inicial
     eq.imagenPortada = dataUrl;
+    loadedCardImages[eqId] = true;
     saveState();
     render();
+    showToast('✅ Imagen añadida y activada en la pantalla inicial');
   });
 }
 
@@ -1482,6 +1835,7 @@ function addPhotoByUrl(eqId) {
   eq.imagenPortada = url;
   saveState();
   render();
+  showToast('✅ Imagen por ruta/URL añadida correctamente');
 }
 
 function setCoverPhoto(eqId, idx) {
@@ -1521,6 +1875,7 @@ function setCustom3DPath(eqId, val) {
   eq.modelo3dCustom = !!val.trim();
   saveState();
   render();
+  showToast('✅ Ruta del Modelo 3D aplicada');
 }
 
 function clear3DModel(eqId) {
@@ -1554,6 +1909,7 @@ function loadLocal3DModel(event, eqId) {
       verified3DStatus[eqId] = true;
       saveState();
       render();
+      showToast('✅ Modelo 3D (.html) guardado y activado');
     };
     reader.readAsText(file);
   } else {
@@ -1564,6 +1920,7 @@ function loadLocal3DModel(event, eqId) {
     verified3DStatus[eqId] = true;
     saveState();
     render();
+    showToast('✅ Modelo 3D (.glb) cargado y activado');
   }
 }
 
